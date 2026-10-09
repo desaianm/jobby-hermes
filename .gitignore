@@ -1,0 +1,136 @@
+# Environment variables and secrets
+.env
+*.env
+.env.*
+!.env.example
+
+# Local credentials and OAuth tokens
+google_token.json
+google_client_secret.json
+client_secret*.json
+oauth_token*.json
+service_account*.json
+service-account*.json
+credentials*.json
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials/
+
+# Local deployment configuration and infrastructure details
+DEPLOYMENT.md
+deploy/
+tests/test_deployment_boundary.py
+
+data/
+.next/
+.vinext/
+.wrangler/
+.claude/
+node_modules/
+user_data/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+!jobby_ui/lib/
+!jobby_ui/lib/**
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs and session data
+logs/
+*.log
+
+# Generated outputs
+output/
+*.pdf
+*.docx
+
+# Private user data
+user_data/base_resume.json
+user_data/preferences.json
+
+# Poetry
+poetry.lock
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+*.tsbuildinfo
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+tmp/
+
+__pycache__/
+logs/
+output/
+
+# Native Jobby candidate state and generated application evidence
+profile/
+.local/share/
+*.sqlite
+*.sqlite3
+*.db
+*.sqlite-*
+*.sqlite3-*
+*.db-*
+candidate.json
+candidate-*.json
+answers.json
+daily-policy.json
+applications/
+artifacts/
+backups/
+screenshots/
+manifests/
+scratch/

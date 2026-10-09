@@ -1,0 +1,22 @@
+#!/usr/bin/python3 -IB
+"""Launch the repository's deterministic CLI from any working directory."""
+import os
+from pathlib import Path
+import sys
+
+
+root = Path(__file__).resolve().parents[2]
+python = root / '.venv/bin/python'
+code = (
+    'import sys; '
+    'root = sys.argv.pop(1); '
+    'sys.path.insert(0, root); '
+    'sys.argv[0] = "jobby"; '
+    'from personal_jobby.__main__ import main; '
+    'main()'
+)
+try:
+    os.execv(str(python), [str(python), '-I', '-B', '-c', code, str(root), *sys.argv[1:]])
+except OSError:
+    print('Error: repository interpreter unavailable; input values withheld.', file=sys.stderr)
+    raise SystemExit(1)

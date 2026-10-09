@@ -1,0 +1,60 @@
+/* Offline export embeds this exact stylesheet. No remote assets. */
+:root { color-scheme: dark; --bg:#0b111b; --panel:#121d2b; --ink:#e6edf5; --muted:#b1bed0; --hermes:#77d9ee; --cli:#80e0b5; --gate:#f2c575; --storage:#c1aff2; --rose:#f5a6ba; --employer:#c0ccdc; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+a { color:var(--hermes); text-underline-offset:4px; }
+a:focus-visible, summary:focus-visible, input:focus-visible + label { outline:3px solid var(--gate); outline-offset:4px; }
+.skip { display:block; padding:10px 24px; min-height:44px; }
+header, main, footer { max-width:1200px; margin:auto; padding:24px 36px; }
+header { border-bottom:1px solid #40516a; display:flex; justify-content:space-between; align-items:center; gap:24px; }
+h1 { font-size:clamp(26px,3vw,38px); line-height:1.2; margin:6px 0; letter-spacing:-.03em; }
+h2 { font-size:23px; margin:0 0 12px; } h3 { font-size:18px; }
+p { margin:8px 0 16px; } .eyebrow { font-size:14px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); }
+.dashboard { display:inline-flex; align-items:center; min-height:44px; padding:8px 14px; border:1px solid #60748e; border-radius:4px; white-space:nowrap; }
+.intro { max-width:88ch; } .caption { color:var(--muted); font-size:14px; }
+.legend-list { display:flex; flex-wrap:wrap; gap:12px 24px; list-style:none; padding:0; margin:18px 0; }
+.legend-list li { display:flex; align-items:center; gap:8px; font-size:14px; }
+.swatch { width:12px; height:12px; background:currentColor; border-radius:50%; }
+.hermes { color:var(--hermes); } .cli { color:var(--cli); } .gate { color:var(--gate); } .storage { color:var(--storage); } .uncertain { color:var(--rose); } .employer { color:var(--employer); }
+fieldset { border:1px solid #53657e; padding:16px 20px; margin:24px 0; min-width:0; }
+legend { padding:0 8px; font-size:14px; letter-spacing:.04em; }
+input[type=radio] { width:20px; height:20px; accent-color:var(--hermes); vertical-align:middle; margin:0 6px 0 0; }
+label { display:inline-flex; align-items:center; min-height:44px; margin-right:24px; cursor:pointer; }
+.scenario { display:none; border-top:1px solid #40516a; padding-top:12px; }
+#path-confirmed:checked ~ .confirmed-example, #path-held:checked ~ .held-example, #path-uncertain:checked ~ .uncertain-example { display:block; }
+.map { overflow-x:auto; margin:24px 0 36px; border-top:1px solid #40516a; border-bottom:1px solid #40516a; padding:20px 0; }
+.map svg { display:block; width:100%; min-width:1000px; height:auto; }
+.map svg text { font-family:system-ui,sans-serif; font-size:16px; fill:var(--ink); }
+.map svg .node-title { font-size:18px; font-weight:650; } .map svg .node-note { fill:var(--muted); font-size:15px; }
+.map svg rect { fill:var(--panel); stroke-width:2; }
+.map svg .hermes rect { stroke:var(--hermes); } .map svg .cli rect { stroke:var(--cli); } .map svg .gate rect { stroke:var(--gate); } .map svg .storage rect { stroke:var(--storage); } .map svg .employer rect { stroke:var(--employer); }
+.route { fill:none; stroke:#94a7c0; stroke-width:2; } .branch { fill:none; stroke:var(--rose); stroke-width:2; stroke-dasharray:5 5; }
+.inspection:has(#path-held:checked) .evidence-route { stroke:var(--gate); stroke-width:4; }
+.inspection:has(#path-uncertain:checked) .branch { stroke-width:4; }
+.inspection:has(#path-confirmed:checked) .receipt-route { stroke:var(--cli); stroke-width:4; }
+.mobile-note { display:none; }
+.stage-list { list-style:none; counter-reset:stage; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.stage-list > li { min-width:0; border-top:1px solid #40516a; }
+.stage-list > li:last-child { grid-column:1 / -1; }
+summary { cursor:pointer; min-height:64px; padding:16px 8px; font-weight:650; }
+summary::marker { color:var(--hermes); } .number { color:var(--muted); font-variant-numeric:tabular-nums; margin-right:12px; }
+.detail-body { padding:0 12px 16px; } dl { margin:0; } dt { color:var(--muted); font-size:14px; font-weight:650; margin-top:12px; } dd { margin:4px 0 12px; }
+pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#0b1420; border-left:2px solid #80e0b5; padding:12px; font:14px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace; }
+code { overflow-wrap:anywhere; } .records { display:grid; grid-template-columns:1fr 1fr; gap:32px; border-top:1px solid #40516a; margin-top:40px; padding-top:28px; }
+.note { border-left:3px solid var(--gate); padding:4px 18px; margin:28px 0; }
+.audit { width:100%; border-collapse:collapse; margin-top:16px; } .audit th,.audit td { text-align:left; padding:12px; border-bottom:1px solid #40516a; vertical-align:top; } .audit th { width:28%; font-weight:600; }
+footer { border-top:1px solid #40516a; color:var(--muted); font-size:14px; }
+@media (max-width: 759px) {
+ header,main,footer { padding:20px; } header { display:block; } .dashboard { margin-top:12px; white-space:normal; }
+ .map svg { display:none; } .mobile-note { display:block; } .map { margin-bottom:20px; }
+ .stage-list,.records { display:block; } .stage-list > li { margin-bottom:12px; } .records > section { margin-bottom:28px; }
+ label { display:flex; } input[type=radio] { float:left; margin-top:12px; } label { margin-left:30px; }
+ .audit th,.audit td { padding:8px; } .audit th { width:34%; }
+}
+@media print {
+ :root { color-scheme:light; --bg:#fff; --panel:#fff; --ink:#111; --muted:#333; --hermes:#14556a; --cli:#155e3f; --gate:#704600; --storage:#503377; --rose:#852443; --employer:#334155; }
+ body { font-size:12pt; } header,main,footer { max-width:none; padding:12pt 0; } .skip,.dashboard,.map svg { display:none; }
+ .mobile-note { display:block; } .stage-list,.records { display:block; } details { break-inside:avoid; } details::details-content { content-visibility:visible; }
+ .detail-body { display:block; } pre, .caption, .eyebrow, dt, footer, legend, .legend-list li { font-size:12pt; } pre { background:#fff; }
+ .scenario { display:block; } input,label { display:none; } a { color:#14556a; } h2 { break-after:avoid; }
+}
