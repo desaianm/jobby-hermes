@@ -1,0 +1,148 @@
+{
+  "candidate": {
+    "name": "Rowan Example \u2014 FICTIONAL TEST CANDIDATE",
+    "contact": "Example City (fictional) | rowan@example.test | https://portfolio.example.test",
+    "email": "rowan@example.test",
+    "location": "Example City (fictional)",
+    "answers": {
+      "work_eligibility": "Fictional sandbox only; no real work authorization asserted",
+      "sponsorship": "No real eligibility asserted; synthetic test only"
+    }
+  },
+  "source_sections": [
+    [
+      "EXPERIENCE",
+      [
+        "Fable Systems (FICTIONAL)",
+        "Example City (fictional)",
+        "Software Engineer",
+        "Jan 2024 - Oct 2026",
+        "\u2022 Built Python and FastAPI services with PostgreSQL transactions, typed request validation, and repeatable integration tests for fictional orders.",
+        "\u2022 Implemented RAG retrieval and evals over synthetic documents, recording grounded answers and regression cases before Docker deployment.",
+        "Paper Lantern Labs (FICTIONAL)",
+        "Example City (fictional)",
+        "Engineering Associate",
+        "Jan 2023 - Dec 2023",
+        "\u2022 Built TypeScript interfaces and Python API clients, documenting schema changes and debugging sandbox integrations with fictional users.",
+        "\u2022 Packaged Docker development environments and PostgreSQL migrations with rollback notes and structured error logging for reproducible releases."
+      ]
+    ],
+    [
+      "PROJECTS",
+      [
+        "Sandbox Connector: Built an MCP tool server with typed inputs, explicit local permissions, and synthetic fixture tests for document lookup.",
+        "Evaluation Notebook: Compared RAG retrieval settings on a fixed synthetic corpus and documented evals, failure cases, and reproducible experiment inputs."
+      ]
+    ],
+    [
+      "TECHNICAL SKILLS",
+      [
+        "Languages and backend: Python, TypeScript, FastAPI, PostgreSQL",
+        "Tools and methods: Docker, RAG, evals, MCP, integration tests"
+      ]
+    ],
+    [
+      "EDUCATION",
+      [
+        "Example Institute (FICTIONAL) | B.Sc. Computer Science (synthetic degree) | Dec 2022"
+      ]
+    ]
+  ],
+  "roles": [
+    {
+      "id": "ai-engineer",
+      "title": "AI Engineer",
+      "url": "https://applications.example.test/jobs/ai-engineer",
+      "description": "FICTIONAL MOCK EMPLOYER ONLY. Required: Python, RAG, evals. Additional required qualifications (unsupported by fictional source): PyTorch production training.",
+      "supported_fact_ids": [
+        "experience-2",
+        "technical-skills-7"
+      ],
+      "gaps": [
+        {
+          "id": "gap-pytorch",
+          "claim": "PyTorch production training",
+          "supported_fact_ids": []
+        }
+      ]
+    },
+    {
+      "id": "backend-engineer",
+      "title": "Backend Engineer",
+      "url": "https://applications.example.test/jobs/backend-engineer",
+      "description": "FICTIONAL MOCK EMPLOYER ONLY. Required: Python, FastAPI, PostgreSQL. Additional required qualifications (unsupported by fictional source): Kafka operations.",
+      "supported_fact_ids": [
+        "experience-1",
+        "technical-skills-7"
+      ],
+      "gaps": [
+        {
+          "id": "gap-kafka",
+          "claim": "Kafka operations",
+          "supported_fact_ids": []
+        }
+      ]
+    },
+    {
+      "id": "ml-platform-engineer",
+      "title": "ML Platform Engineer",
+      "url": "https://applications.example.test/jobs/ml-platform-engineer",
+      "description": "FICTIONAL MOCK EMPLOYER ONLY. Required: Docker, evals, Python. Additional required qualifications (unsupported by fictional source): Kubernetes cluster administration.",
+      "supported_fact_ids": [
+        "experience-4",
+        "technical-skills-8"
+      ],
+      "gaps": [
+        {
+          "id": "gap-kubernetes",
+          "claim": "Kubernetes cluster administration",
+          "supported_fact_ids": []
+        }
+      ]
+    },
+    {
+      "id": "fde",
+      "title": "Forward Deployed Engineer",
+      "url": "https://applications.example.test/jobs/fde",
+      "description": "FICTIONAL MOCK EMPLOYER ONLY. Required: TypeScript, MCP, FastAPI. Additional required qualifications (unsupported by fictional source): International travel authorization.",
+      "supported_fact_ids": [
+        "experience-3",
+        "projects-5"
+      ],
+      "gaps": [
+        {
+          "id": "gap-travel",
+          "claim": "International travel authorization",
+          "supported_fact_ids": []
+        }
+      ]
+    },
+    {
+      "id": "senior-stretch",
+      "title": "Senior Engineer (stretch)",
+      "url": "https://applications.example.test/jobs/senior-stretch",
+      "description": "FICTIONAL MOCK EMPLOYER ONLY. Required: Python, PostgreSQL, Docker. Additional required qualifications (unsupported by fictional source): 10 years of engineering experience; Managed a team of 12 engineers; Rust production systems.",
+      "supported_fact_ids": [
+        "experience-1",
+        "technical-skills-8"
+      ],
+      "gaps": [
+        {
+          "id": "gap-years",
+          "claim": "10 years of engineering experience",
+          "supported_fact_ids": []
+        },
+        {
+          "id": "gap-leadership",
+          "claim": "Managed a team of 12 engineers",
+          "supported_fact_ids": []
+        },
+        {
+          "id": "gap-rust",
+          "claim": "Rust production systems",
+          "supported_fact_ids": []
+        }
+      ]
+    }
+  ]
+}

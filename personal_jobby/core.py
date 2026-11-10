@@ -241,13 +241,39 @@ def assess(job,settings,profile=None):
     return state,reasons
 
 
+RANKING_IGNORED = frozenset('''
+    the a an and or for in of to with by on at from as is are be this that
+    these those it its our your we you will can have has before after over
+    built using only required requirements additional qualification qualifications
+    unsupported source fictional mock synthetic candidate employer
+    experience working team role offers opportunity right company join
+'''.split())
+
+
+def ranking_terms(text):
+    """Exact lexical terms, retaining punctuation in C++, C#, .NET and CI/CD."""
+    return set(re.findall(
+        r'(?<!\w)(?:[a-z][a-z0-9]*(?:\+\+|#)|\.[a-z][a-z0-9]*|[a-z0-9]+(?:[./][a-z0-9]+)*)(?!\w)',
+        text.lower())) - RANKING_IGNORED
+
+
 def select_facts(profile,job):
-    words=set(re.findall(r'[a-z0-9]+',job['title'].lower()+' '+job['description'].lower()))
-    scored=[]
-    for f in profile['facts']:
-        overlap=words & set(re.findall(r'[a-z0-9]+',f['text'].lower()))-{'the','a','and','for','in','of','to','with','built','using'}
-        scored.append((len(overlap),f['id']))
-    ids=[i for _,i in sorted(scored,key=lambda x:(-x[0],x[1]))]
     from personal_jobby.wording import tailor
-    tailoring=[tailor(f,job['title']+' '+job['description']) for f in profile['facts']]
-    return dict(mode='truthful deterministic',selection_mode='source facts with bounded equivalent wording',tailoring=tailoring,selected_fact_ids=ids,evidence=[dict(fact_id=i,classification='demonstrated' if n else 'adjacent',source=next(f['source'] for f in profile['facts'] if f['id']==i)) for n,i in scored],gaps=sorted(words & {'bert','qwen','reinforcement','certification','gpt-4'}))
+    posting=job['title']+' '+job['description']
+    tailoring=[tailor(f,posting) for f in profile['facts']]
+    words=ranking_terms(posting)
+    scored=[];evidence=[]
+    for f,t in zip(profile['facts'],tailoring):
+        overlap=words & ranking_terms(t['rendered'])
+        scored.append((len(overlap),f['id']))
+        evidence.append(dict(fact_id=f['id'],classification='demonstrated' if overlap else 'adjacent',
+                             source=f['source'],matched_terms=sorted(overlap),lexical_score=len(overlap)))
+    ids=[i for _,i in sorted(scored,key=lambda x:-x[0])]
+    return dict(mode='truthful deterministic',selection_mode='source facts with bounded equivalent wording',
+                tailoring=tailoring,selected_fact_ids=ids,evidence=evidence,
+                ranking=dict(method='distinct exact lexical overlap',tie_break='source order',
+                             ignored_terms=sorted(RANKING_IGNORED),
+                             scope='Source-fact overlap after reviewed terminology equivalences only, '
+                                   'including legacy demonstrated/adjacent labels; '
+                                   'not skill verification, semantic fit or hiring probability.'),
+                gaps=sorted(words & {'bert','qwen','reinforcement','certification','gpt-4'}))

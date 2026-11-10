@@ -1,0 +1,529 @@
+{
+  "initialize": {
+    "name": "jobby_initialize",
+    "description": "Mutates local profile data: initialize. Never submits. Direct mode prepares selected posting materials only; downstream policy remains pending.",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "pdf_path": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Pdf Path",
+          "type": "string"
+        },
+        "replace": {
+          "default": false,
+          "title": "Replace",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "pdf_path"
+      ],
+      "title": "Initialize",
+      "type": "object"
+    }
+  },
+  "intake": {
+    "name": "jobby_intake",
+    "description": "Mutates local profile data: intake. Never submits. Direct mode prepares selected posting materials only; downstream policy remains pending.",
+    "parameters": {
+      "$defs": {
+        "Job": {
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "maxLength": 250,
+              "minLength": 1,
+              "title": "Title",
+              "type": "string"
+            },
+            "company": {
+              "maxLength": 250,
+              "minLength": 1,
+              "title": "Company",
+              "type": "string"
+            },
+            "requisition": {
+              "default": "",
+              "maxLength": 250,
+              "title": "Requisition",
+              "type": "string"
+            },
+            "location": {
+              "default": "",
+              "maxLength": 500,
+              "title": "Location",
+              "type": "string"
+            },
+            "job_url": {
+              "maxLength": 2000,
+              "title": "Job Url",
+              "type": "string"
+            },
+            "description": {
+              "maxLength": 60000,
+              "minLength": 1,
+              "title": "Description",
+              "type": "string"
+            },
+            "employment_type": {
+              "default": "unknown",
+              "pattern": "^(unknown|permanent_full_time|contract|temporary|part_time)$",
+              "title": "Employment Type",
+              "type": "string"
+            },
+            "employment_evidence": {
+              "default": "",
+              "maxLength": 2000,
+              "title": "Employment Evidence",
+              "type": "string"
+            },
+            "arrangement": {
+              "default": "unknown",
+              "pattern": "^(unknown|hybrid|remote|onsite)$",
+              "title": "Arrangement",
+              "type": "string"
+            },
+            "arrangement_evidence": {
+              "default": "",
+              "maxLength": 2000,
+              "title": "Arrangement Evidence",
+              "type": "string"
+            },
+            "qualifications_reviewed": {
+              "default": false,
+              "title": "Qualifications Reviewed",
+              "type": "boolean"
+            },
+            "qualification_review_note": {
+              "default": "",
+              "maxLength": 2000,
+              "title": "Qualification Review Note",
+              "type": "string"
+            },
+            "original_source": {
+              "additionalProperties": true,
+              "title": "Original Source",
+              "type": "object"
+            },
+            "salary": {
+              "$ref": "#/$defs/Salary"
+            }
+          },
+          "required": [
+            "title",
+            "company",
+            "job_url",
+            "description"
+          ],
+          "title": "Job",
+          "type": "object"
+        },
+        "Salary": {
+          "additionalProperties": false,
+          "properties": {
+            "raw": {
+              "default": "",
+              "maxLength": 2000,
+              "title": "Raw",
+              "type": "string"
+            },
+            "source_url": {
+              "default": "",
+              "maxLength": 2000,
+              "title": "Source Url",
+              "type": "string"
+            },
+            "origin": {
+              "default": "unknown",
+              "pattern": "^(employer|aggregator|estimate|unknown)$",
+              "title": "Origin",
+              "type": "string"
+            },
+            "currency": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Currency"
+            },
+            "unit": {
+              "anyOf": [
+                {
+                  "maxLength": 30,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Unit"
+            },
+            "kind": {
+              "anyOf": [
+                {
+                  "maxLength": 30,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Kind"
+            },
+            "lower": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Lower"
+            },
+            "upper": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Upper"
+            },
+            "verified": {
+              "default": false,
+              "title": "Verified",
+              "type": "boolean"
+            }
+          },
+          "title": "Salary",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "posting": {
+          "$ref": "#/$defs/Job"
+        },
+        "mode": {
+          "enum": [
+            "direct",
+            "discovery"
+          ],
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "posting",
+        "mode"
+      ],
+      "title": "Intake",
+      "type": "object"
+    }
+  },
+  "overview": {
+    "name": "jobby_overview",
+    "description": "Read local overview and next action. Never submits. Direct mode prepares selected posting materials only; downstream policy remains pending.",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "job_id": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Job Id"
+        }
+      },
+      "title": "Overview",
+      "type": "object"
+    }
+  },
+  "prepare": {
+    "name": "jobby_prepare",
+    "description": "Mutates local profile data: prepare. Never submits. Direct mode prepares selected posting materials only; downstream policy remains pending.",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "job_id": {
+          "minimum": 1,
+          "title": "Job Id",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "title": "Selected",
+      "type": "object"
+    }
+  },
+  "review": {
+    "name": "jobby_review",
+    "description": "Mutates local profile data: review. Never submits. Direct mode prepares selected posting materials only; downstream policy remains pending.",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "job_id": {
+          "minimum": 1,
+          "title": "Job Id",
+          "type": "integer"
+        },
+        "review_token": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Review Token",
+          "type": "string"
+        },
+        "reviewer": {
+          "maxLength": 250,
+          "minLength": 1,
+          "title": "Reviewer",
+          "type": "string"
+        },
+        "note": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job_id",
+        "review_token",
+        "reviewer",
+        "note"
+      ],
+      "title": "Review",
+      "type": "object"
+    }
+  },
+  "attempt": {
+    "name": "jobby_attempt",
+    "description": "Mutates local profile data: attempt. Never submits. Direct mode prepares selected posting materials only; downstream policy remains pending.",
+    "parameters": {
+      "$defs": {
+        "Attachment": {
+          "additionalProperties": false,
+          "properties": {
+            "filename": {
+              "enum": [
+                "resume.pdf",
+                "resume.docx",
+                "cover_letter.pdf",
+                "cover_letter.docx"
+              ],
+              "title": "Filename",
+              "type": "string"
+            },
+            "sha256": {
+              "pattern": "^[a-f0-9]{64}$",
+              "title": "Sha256",
+              "type": "string"
+            }
+          },
+          "required": [
+            "filename",
+            "sha256"
+          ],
+          "title": "Attachment",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "job_id": {
+          "minimum": 1,
+          "title": "Job Id",
+          "type": "integer"
+        },
+        "generation_id": {
+          "pattern": "^[a-f0-9]{32}$",
+          "title": "Generation Id",
+          "type": "string"
+        },
+        "review_token": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Review Token",
+          "type": "string"
+        },
+        "application_url": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Application Url",
+          "type": "string"
+        },
+        "resume": {
+          "$ref": "#/$defs/Attachment"
+        },
+        "cover_letter": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Attachment"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "job_id",
+        "generation_id",
+        "review_token",
+        "application_url",
+        "resume",
+        "cover_letter"
+      ],
+      "title": "Attempt",
+      "type": "object"
+    }
+  },
+  "discover": {
+    "name": "jobby_discover",
+    "description": "Inspect resume-grounded query suggestions, confirm explicit Canada-only provider preferences, or run bounded discovery. Search uses only confirmed terms. No application or eligibility authority.",
+    "parameters": {
+      "$defs": {
+        "SearchPreferences": {
+          "additionalProperties": false,
+          "description": "Provider options, separate from eligibility and submission settings.",
+          "properties": {
+            "country": {
+              "const": "Canada",
+              "title": "Country",
+              "type": "string"
+            },
+            "location": {
+              "maxLength": 120,
+              "minLength": 1,
+              "title": "Location",
+              "type": "string"
+            },
+            "remote": {
+              "title": "Remote",
+              "type": "boolean"
+            },
+            "hours_old": {
+              "maximum": 720,
+              "minimum": 1,
+              "title": "Hours Old",
+              "type": "integer"
+            },
+            "per_query": {
+              "maximum": 10,
+              "minimum": 1,
+              "title": "Per Query",
+              "type": "integer"
+            },
+            "total": {
+              "maximum": 25,
+              "minimum": 1,
+              "title": "Total",
+              "type": "integer"
+            },
+            "order": {
+              "enum": [
+                "lexical",
+                "newest",
+                "oldest"
+              ],
+              "title": "Order",
+              "type": "string"
+            }
+          },
+          "required": [
+            "country",
+            "location",
+            "remote",
+            "hours_old",
+            "per_query",
+            "total",
+            "order"
+          ],
+          "title": "SearchPreferences",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "enum": [
+            "inspect",
+            "confirm",
+            "search"
+          ],
+          "title": "Operation",
+          "type": "string"
+        },
+        "source_token": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Token"
+        },
+        "queries": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 3,
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Queries"
+        },
+        "preferences": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SearchPreferences"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "operation"
+      ],
+      "title": "Discover",
+      "type": "object"
+    }
+  }
+}

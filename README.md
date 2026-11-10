@@ -1,193 +1,82 @@
-# Jobby Hermes — Jobby v2
+# Jobby for Hermes
 
-This is **Jobby v2**, the Hermes-connected version of Jobby. The earlier Jobby
-implementation remains in our private `jobby_bot` repository. This public repo
-contains the new native CLI integration and its tests, with a clean history
-that excludes private candidate and application data.
+Turn a source resume into a persistent job shortlist and source-backed resume and cover-letter drafts. The native Jobby desk supports importing a resume, confirming a bounded Canadian search, inspecting posting evidence, and preparing PDF/DOCX files for review.
 
-A standalone, deterministic Python employment desk for an external
-[Hermes CLI operator](https://github.com/NousResearch/hermes-agent).
-Jobby keeps source-backed candidate facts, postings, documents and application
-evidence in a private local workspace. Hermes supplies reasoning and browser
-execution under the [operator skill](personal_jobby/skills/hermes-jobby-daily/SKILL.md).
+The desk does not submit applications. Auto-apply is inactive. Search confirmation, selecting a posting, and downloading documents do not grant application authority or record document approval.
 
-This repository is a selective export from a private project, with fresh history.
-It includes the `personal_jobby` package and seven synthetic test modules; candidate
-state, screenshots, logs and the former application stack are excluded.
+## Install and enable
 
-## Architecture and features
+Current supported host: Linux/POSIX. The standalone engine declares Python 3.11–3.14; the inspected Hermes package manager uses Python 3.14. Other operating systems are unverified, and POSIX file locks and descriptor protections must not be disabled. Jobby declares Hermes >=0.22.5. Install and configure Hermes separately. Its package manager installs the bundled Python engine and declared dependencies, including JobSpy; a separate CLI installation is unnecessary for native use.
 
-```text
-Authoritative text PDF + confirmed criteria/answers
-                         |
-                         v
-              Jobby CLI / optional local dashboard
-                         |
-              private SQLite + profile + artifacts
-                         |
-              grounded PDF/DOCX -> exact-generation QA
-                         |
-              manifest -> reviewed form -> durable reservation
-                         |
-              external Hermes browser -> one Submit click
-                         |
-              real confirmation -> reviewed evidence -> receipt
-```
-
-- Import candidate facts with source excerpts and SHA-256 provenance.
-- Store postings; explicitly discover with JobSpy; deduplicate URL aliases and
-  employer requisitions; hold unsupported salary, location or qualification claims.
-- Tailor resumes and cover letters from existing facts using bounded equivalent
-  keywords, with an evidence trail and immutable document generations.
-- Bind visual approval, attachment manifests, document hashes and reviewed
-  screenshots to the exact application attempt.
-- Keep a durable daily ledger, exclusive renewable lease, attempted-submission
-  cap, kill switch and persistent duplicate/uncertain-outcome locks.
-- Inspect local state through sanitized CLI JSON or the optional FastAPI dashboard.
-
-**External-browser boundary:** Python never calls model APIs, opens or fills
-employer forms, or clicks Submit. The CLI records evidence and checks guards;
-Hermes must inspect the employer page, supply truthful observations, review
-documents and screenshots, and perform any authorized browser action. The skill
-is supplied to Hermes separately; installing Jobby does not activate it or
-configure Hermes authentication, browser tools or scheduling.
-
-See the [CLI contract](personal_jobby/CLI.md),
-[local runbook](personal_jobby/README.md), and
-[offline system flow](personal_jobby/static/system-flow.html) for details.
-
-## Install from a checkout
-
-Use Linux, Python 3.10 or newer, `/usr/bin/python3`, and system timezone data for
-`America/Toronto`. The launcher uses this checkout's `.venv/bin/python`; this
-export has no root packaging metadata or installed console entrypoint.
+Use Hermes's Git installer:
 
 ```bash
-git clone https://github.com/desaianm/jobby-hermes.git
-cd jobby-hermes
+hermes plugins install desaianm/jobby-hermes --no-enable
+hermes plugins enable jobby
+```
+
+For a reproducible installation, add `--ref FULL_COMMIT_SHA` to the install command, replacing `FULL_COMMIT_SHA` with the complete 40-character commit you reviewed. A branch name or a local test result is not an exact-revision installation check.
+
+Review the installer's dependency and trust prompts. Enable Jobby in the backend profile you intend to use, then enable its Desktop contribution in **Capabilities → Plugins**. Open **Jobby desk** from the sidebar or **Open Jobby desk** from the command palette. For a remote backend, the Desktop contribution must also be installed on the desktop machine through the host's supported installation flow.
+
+Recorded native acceptance: untouched stock Hermes v0.23.0 on Linux passed isolated local-directory package-manager admission and a native source import, Indeed-backed search, document preparation, PDF previews, all four OS-dialog saves, reload persistence and CLI generation/hash readback. The shell used an existing Electron/dev renderer. Check Git installation and dependency-inclusive validation against the exact public commit you intend to use; this native recording alone does not establish them. A packaged Desktop installer and full native race matrix remain unverified; human approval and employer fill/submit/receipt were not qualified.
+
+Development-only warning: the complete source includes host-specific qualification scripts and historical evidence notes. `hermes plugins validate` warns about the opt-in native qualification runner's `PluginManager` import. That runner is not a plugin runtime entrypoint; runtime registration and the desk use the supported plugin APIs. Read the warning rather than treating a passing validator as catalog acceptance.
+
+## First run
+
+1. **Import your resume.** Enter the absolute PDF path on the machine running the Hermes backend and choose **Import source PDF**. This is a path field, not a file upload or file picker. Use an authoritative text PDF, up to 8 MiB, with the supported Experience, Projects, Technical Skills and Education sections and dated employment headings. Scanned PDFs and other layouts may be rejected. The file and its parent paths must not be symlinks. Inspect the imported facts before relying on generated materials.
+
+2. **Confirm a search.** Under **Find jobs from your resume**, inspect the source excerpts and choose one to three suggested role or skill terms. Choose Canada, a supported location, remote-only or all arrangements, freshness, result limits and shortlist order. Tick **I confirm these search preferences and source-backed query terms**, then choose **Confirm search setup**. Search confirmation covers these search preferences only; it does not establish work authorization, employer eligibility or application consent.
+
+3. **Search and inspect.** Choose **Search approved terms**. The persistent shortlist shows posting links, matching terms, source excerpts, unmatched posting terms and unknowns. Select a posting by its title/company button. Lexical coverage measures wording overlap; it does not establish suitability or hiring probability. Inspect the source listing and verify location, salary, dates and qualifications yourself.
+
+4. **Prepare documents.** Choose **Prepare documents** for the selected posting. Inspect **Posting and preparation boundaries** and **Source evidence and gaps**. Preparation produces a resume and cover letter in both PDF and DOCX formats, with previews of the generated PDFs.
+
+5. **Download and review.** Use **Download PDF** and **Download DOCX** under each document. Check factual accuracy, wording, omitted information and layout in both PDFs. Open both DOCX files in Word or LibreOffice to check their pagination. Viewing or saving files leaves visual review pending. Recording approval belongs to the separate operator workflow and must refer to this exact generation. Changed inputs or document bytes require regeneration and fresh review.
+
+Already have a posting? Use **Or paste a selected posting**. Enter company, job title, posting URL and description, plus location when known. Tick **I selected this posting for local document preparation**, then choose **Save selected posting**. Reopen it under **Saved postings** and prepare its documents.
+
+## Search limits
+
+Search currently supports Canada only. Accepted city/province pairs are Ottawa, ON; Toronto, ON; London, ON; Vancouver, BC; and Montreal, QC. You can also use a province or territory name/code followed by Canada, or simply Canada. Returned posting geography still needs verification.
+
+Limits are one to three approved query terms, 1–720 hours of freshness, 1–10 results per query and 1–25 total results per run. Up to 100 stored shortlist entries are displayed. Changing confirmed preferences requires confirmation again; replacing or changing the source also requires fresh confirmation.
+
+Discovery requests Indeed and LinkedIn through JobSpy. Real Indeed results have been observed in native acceptance; independent LinkedIn success is not established. Provider availability and result completeness can vary. Source dates may be unknown, freshness is a provider filter, and aggregator salaries require employer verification. Approved public role/skill terms are used as queries; resume text and employer history are not sent as search terms.
+
+Network and file access: confirmed searches contact third-party job providers through JobSpy using the approved terms and search preferences. Import reads the absolute source PDF you select outside Jobby's workspace; subsequent source-integrity checks reread it. Document generation runs locally without model API calls. The native plugin declares seven tools and no privileged `capabilities` in `plugin.yaml`; employer browser interaction belongs to external Hermes under separate authority.
+
+A failed, partial or empty search does not erase the existing shortlist. Inspect the last-search outcome and per-query messages. The observed count can include existing stored postings; it is not necessarily a count of newly added jobs. You can paste a selected posting when discovery is unavailable.
+
+## Private workspace and human boundaries
+
+Native state belongs to the active Hermes profile, under `plugin_data_dir("jobby")/workspace`, outside the plugin installation. It includes private imported facts, postings, settings, documents and evidence. With a remote backend, that workspace is on the backend machine. Keep it and source files out of public repositories and diagnostics. Profile or connection changes clear the page's current inputs and document view; confirm your active profile before continuing.
+
+Choosing **Replace imported source and invalidate existing documents** backs up the prior profile and invalidates current materials. It does not approve replacement documents. Preserve your authoritative PDF and reimport it when intentionally changing source facts.
+
+The native desk has no approval, private-answer editing, application-attempt or Submit button. Review and any separately authorized employer interaction belong to the operator workflow. Unknown answers and existing application holds must be resolved there. An uncertain employer outcome must not be retried blindly. An application is complete only when actual employer confirmation is recorded; document preparation and downloads are not submissions.
+
+## If something fails
+
+- **The local desk is unavailable:** check that the Python backend is enabled in the current backend profile, its dependencies are installed, and inputs are valid; then choose **Refresh**. A visible Desktop entry alone does not enable the backend.
+- **Import fails:** verify that the absolute path exists on the backend machine, the file is a supported text PDF within the size limit, and neither it nor its ancestors are symlinks. Replacing an existing source requires the replacement checkbox.
+- **Search is disabled:** select supported source-backed terms, complete all preferences, tick confirmation and save the setup. Edited preferences must be confirmed again.
+- **No source suggestions:** the source may have changed or contain no supported query vocabulary. Inspect or reimport the source, or paste a selected posting.
+- **Search dependency unavailable:** have the operator repair declared dependencies through Hermes package management in the intended owned environment. Re-enabling an already enabled plugin alone does not refresh its dependency generation.
+- **Exact documents unavailable or stale:** refresh the selected posting, reimport an intentionally changed source if needed, then regenerate and inspect again.
+- **Application on hold:** continue through the operator workflow; do not create a replacement attempt to bypass the hold.
+
+## Optional standalone CLI
+
+The CLI is a separate interface with separate state defaults. From a source checkout, install it into a dedicated virtual environment:
+
+```bash
 python3 -m venv .venv
-.venv/bin/python -m pip install -r personal_jobby/requirements.txt
-.venv/bin/python -m personal_jobby --help
-personal_jobby/bin/jobby --help
-personal_jobby/bin/jobby init --help
+.venv/bin/python -m pip install .
+.venv/bin/jobby --help
 ```
 
-Dependencies cover validation (Pydantic/FastAPI), PDF import and document
-generation (PyMuPDF, python-docx, ReportLab), explicit discovery (python-jobspy)
-and the optional dashboard (Uvicorn). Jobby does not load `.env` or require model
-API credentials. Install and configure Hermes separately using its upstream guide.
+CLI state defaults to `~/.local/share/jobby-personal`; an absolute `JOBBY_ROOT` selects a different private workspace. Native plugin calls ignore `JOBBY_ROOT`. A CLI job ID therefore need not identify the same job as a native desk ID. For native readback, operators should use the fresh profile-bound handoff returned by the native tool rather than guessing a workspace.
 
-Optionally expose the checkout launcher on PATH:
-
-```bash
-mkdir -p "$HOME/.local/bin"
-ln -s "$PWD/personal_jobby/bin/jobby" "$HOME/.local/bin/jobby"
-```
-
-Ensure `~/.local/bin` is on PATH and inspect any existing `jobby` before replacing
-it. The launcher resolves symlinks to this checkout, isolates Python imports and
-works from other directories. Relative input paths resolve from the caller's
-working directory. Use `python -m personal_jobby` from the repository root.
-
-## Initialize private state
-
-State defaults to `~/.local/share/jobby-personal`. To choose another workspace,
-set an absolute `JOBBY_ROOT` before starting any CLI or dashboard process.
-Keep it outside the checkout; the paths below are placeholders for your own
-private workspace and authoritative resume:
-
-```bash
-export JOBBY_ROOT=/absolute/private/jobby-workspace
-personal_jobby/bin/jobby init --pdf /absolute/private/authoritative-resume.pdf
-personal_jobby/bin/jobby status --brief
-personal_jobby/bin/jobby profile
-personal_jobby/bin/jobby daily status
-```
-
-The importer requires a text PDF with supported Experience, Projects, Technical
-Skills and Education sections and dated employment headings. Review imported
-facts privately. Scanned PDFs and unsupported layouts may be rejected. Replacing
-a source requires `init --pdf ... --replace`, backs up the profile and invalidates
-live materials. Private input files and their ancestors must be free of symlinks.
-
-Initial criteria are provisional. Confirm criteria, work eligibility and current
-submission intent through the optional local dashboard before application work.
-Phone is entered only through its private masked form; it is omitted from CLI
-profile output and generated documents. Other profile facts remain private even
-when JSON output is phone-sanitized. Keep them out of public diagnostics.
-
-For local review, from the checkout with the same `JOBBY_ROOT`:
-
-```bash
-.venv/bin/python -m uvicorn personal_jobby.app:create_app --factory --host 127.0.0.1 --port 8090 --no-access-log
-```
-
-Open `http://127.0.0.1:8090` on the same machine. The dashboard has no account
-login; use trusted local access. Remote access and secure phone entry require
-separately configured authenticated HTTPS, described in the runbook.
-
-## Evidence and submission guards
-
-Tailoring cannot invent skills, metrics, dates, experience duration or
-qualifications. Automatic document checks do not constitute visual QA: the
-operator must review current PDFs, DOCX documents and previews before `approve`.
-Approval binds the generation, source/settings/posting fingerprints and artifact
-hashes; changes invalidate it. DOCX pagination needs Word or LibreOffice review.
-
-An attempt captures the approved generation and actual attached filenames/hashes,
-including an explicit cover-letter decision. Before a daily submit, ingest an
-actually reviewed filled-form PNG with phone masked **before capture**; the
-`--phone-redacted` flag attests review and does not redact pixels. Then
-`daily begin-submit` durably reserves the exact posting/attempt and Toronto-day
-budget before one external click. It checks the live lease, policy, intent,
-confirmed criteria/answers, eligibility, document approval and duplicate locks.
-Uncertain outcomes stay locked across runs and days and must never be blindly
-retried. Closing or expiring a run does not release an unresolved reservation.
-
-Only actual employer receipt evidence records `applied`. Hermes-managed receipts
-require the exact attempt and reviewed employer-confirmation screenshot, preserve
-submitted document copies, and use a timezone-aware timestamp. A manual reported
-receipt without an attempt explicitly records documents unknown. An upload,
-filled draft, reservation or configured schedule is not a completed application.
-
-Daily operation is **disabled by default**, with no cron ID or schedule. Obtain
-candidate authorization and manually configure and verify an external Hermes
-scheduler before recording its configuration. `daily configure` only records
-that information; it does not install cron or prove execution. Clearing desired
-submission is the kill switch for new reservations. Follow the operator skill
-and CLI contract for the full guarded sequence.
-
-## Privacy and limitations
-
-Private directories use 0700 and files 0600; state is unencrypted at rest.
-Keep profiles, answers, source resumes, databases, manifests, screenshots, logs
-and backups outside version control. `.gitignore` excludes common state and
-artifact paths, including databases, `profile/` and `.venv`; it cannot sanitize
-arbitrary files or prevent forced staging.
-
-Current eligibility rules cover permanent full-time roles with evidenced
-Toronto/GTA hybrid or Canada remote arrangements and employer-posted CAD annual
-base salary. Other policies require implementation review. Discovery may be
-blocked, empty or incomplete and does not replace employer verification. Unknown
-required answers, login/MFA/CAPTCHA, assessments and personal attestations need
-operator or human review. This is not a universal ATS adapter. Synthetic tests
-demonstrate local control behavior, not completed real applications.
-
-## Verification
-
-Use synthetic fixtures and temporary workspaces only. Install development tools
-into the checkout environment if needed:
-
-```bash
-.venv/bin/python -m pip install pytest httpx Pillow
-.venv/bin/python -m pytest -q tests
-.venv/bin/python -m compileall -q personal_jobby tests
-node --check personal_jobby/static/app.js
-```
-
-The seven modules use temporary candidate state, synthetic PDFs/PNGs and mocked
-discovery. Launcher tests require this checkout's `.venv/bin/python`; Node.js is
-only needed for the JavaScript syntax check. For launcher JSON smoke checks,
-set `JOBBY_ROOT` to a fresh temporary workspace and run `status --brief` or
-`daily status` from another working directory. Development verification must not
-read a real candidate workspace, invoke live discovery or submit applications.
+See [the CLI contract](personal_jobby/CLI.md), [operator workflow](skills/assisted-application/SKILL.md), and [detailed runbook](personal_jobby/README.md) for operator-only commands and review requirements.

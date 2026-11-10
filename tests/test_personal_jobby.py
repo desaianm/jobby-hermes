@@ -384,12 +384,12 @@ def test_canonical_alias_deduplicates_real_listing(tmp_path):
  s=Store(tmp_path);j=sample();j['original_source']={'job_url_direct':'https://careers.example.com/jobs/abc'};first=s.add(j)
  direct=sample();direct['job_url']='https://careers.example.com/jobs/abc';direct['requisition']='';assert s.add(direct)['id']==first['id'];assert len(s.jobs())==1
 
-def test_inline_skills_and_first_person_cover(tmp_path):
+def test_inline_skills_and_source_preserving_cover(tmp_path):
  s,j=document_workspace(tmp_path);p=s.profile();p['facts'].append(dict(id='skill',section='TECHNICAL SKILLS',group='LLM engineering',date='',text='Prompt engineering, tool calling, structured outputs, retrieval-augmented generation (RAG), multimodal extraction, evaluation',source='fixture',excerpt='fixture'));(s.root/'candidate.json').write_text(json.dumps(p));prepare(s,1)
  folder=s.artifact_dir(1)
  with fitz.open(folder/'resume.pdf') as d:
   text=d[0].get_text();assert 'LLM engineering:' in text;assert '\nevaluation\n' not in text
- with fitz.open(folder/'cover_letter.pdf') as d:assert 'I built Python services.' in d[0].get_text()
+ with fitz.open(folder/'cover_letter.pdf') as d:assert '• Built Python services.' in d[0].get_text()
 
 @pytest.mark.parametrize('ending',['Pydantic','Next.js'])
 def test_inline_skills_keep_final_tokens_together(tmp_path,ending):

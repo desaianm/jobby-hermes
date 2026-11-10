@@ -22,7 +22,20 @@ def main():
     screenshot=sub.add_parser('screenshot',help='Ingest an already reviewed phone-sanitized PNG locally');screenshot.add_argument('attempt_id');screenshot.add_argument('png_file');screenshot.add_argument('--kind',choices=['filled_form','employer_confirmation'],required=True);screenshot.add_argument('--qa-note',required=True);screenshot.add_argument('--phone-redacted',action='store_true',help='Attest phone field was masked/removed BEFORE capture and PNG visually checked')
     from personal_jobby.daily import add_parser
     add_parser(sub)
+    from personal_jobby.greenhouse import add_parser as add_questions_parser
+    add_questions_parser(sub)
     args=p.parse_args()
+    if args.command=='questions':
+        try:
+            with redirect_stdout(StringIO()):
+                from personal_jobby.greenhouse import dispatch
+                result=dispatch(args)
+            print(json.dumps(result,indent=2))
+        except Exception as e:
+            p.exit(1,'Error: command failed ('+type(e).__name__+'); input values withheld. Check validation, source availability and private paths.\n')
+        if not result.get('ok'):
+            raise SystemExit(1)
+        return 0
     try:
         # Backend imports and operations may print private data; discard it.
         with redirect_stdout(StringIO()):
@@ -66,4 +79,4 @@ def main():
     except Exception as e:
         p.exit(1,'Error: command failed ('+type(e).__name__+'); input values withheld. Check validation, source availability and private paths.\n')
 
-if __name__=='__main__': main()
+if __name__=='__main__': sys.exit(main())

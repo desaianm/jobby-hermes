@@ -12,6 +12,13 @@ metadata:
 
 # Daily personal applications
 
+For selected-posting preparation with the native plugin, use the bundled
+`jobby:assisted-application` skill and `jobby_initialize`, `jobby_intake`,
+`jobby_overview`, `jobby_prepare`, `jobby_review`, `jobby_attempt`. Plugin state is
+profile-scoped and separate from CLI `JOBBY_ROOT`; do not mix their IDs or artifacts.
+That flow stops before external submission. The daily CLI policy below remains
+unchanged and is not a universal policy for direct-request preparation.
+
 ## When to use
 
 Execute an explicitly authorized private daily application run through the existing `jobby` CLI and Hermes browser tools. Do not use for public product deployment, employer outreach, or another candidate without their own confirmed authorization.

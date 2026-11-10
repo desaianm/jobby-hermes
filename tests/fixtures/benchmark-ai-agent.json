@@ -1,0 +1,34 @@
+{
+  "purpose": "Controlled non-human fixture vocabulary for document, audit, public metadata/cache and local browser workflow evaluation. Capabilities describe tested workflow surfaces, not employment history or measured model performance.",
+  "candidate": {
+    "name": "AI Agent — NON-HUMAN SYNTHETIC FIXTURE",
+    "first_name": "AI",
+    "last_name": "Agent (NON-HUMAN SYNTHETIC FIXTURE)",
+    "contact": "Non-human AI Agent | agent@example.test",
+    "email": "agent@example.test",
+    "answers": {}
+  },
+  "source_sections": [
+    ["EXPERIENCE", []],
+    ["PROJECTS", [
+      "Document workflow evaluation: Python document generation and source-backed audit tooling evaluated with synthetic local fixtures.",
+      "Metadata workflow evaluation: Public question metadata, deterministic answer cache and local-browser multipart evaluation with controlled fixtures."
+    ]],
+    ["TECHNICAL SKILLS", [
+      "Tested workflow vocabulary: Python document tooling, source provenance, audit verification, public metadata, deterministic cache, local-browser evaluation"
+    ]],
+    ["EDUCATION", []]
+  ],
+  "supported_source_texts": [
+    "Python document generation and source-backed audit tooling evaluated with synthetic local fixtures.",
+    "Public question metadata, deterministic answer cache and local-browser multipart evaluation with controlled fixtures."
+  ],
+  "role_template": {
+    "description": "FICTIONAL MOCK EMPLOYER ONLY. Controlled non-human AI-agent workflow evaluation: Python document tooling, metadata, deterministic cache, audit verification and local-browser evaluation. Public role qualifications remain unassessed.",
+    "supported_fact_ids": [],
+    "gaps": [
+      {"id": "gap-training", "claim": "PyTorch production training", "supported_fact_ids": []},
+      {"id": "gap-qualifications", "claim": "Verified public role qualifications", "supported_fact_ids": []}
+    ]
+  }
+}

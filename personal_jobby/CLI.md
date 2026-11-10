@@ -7,7 +7,8 @@ paths resolve from your working directory. The generic launcher resolves its own
 symlinks and runs the repository `.venv/bin/python -I`, adding only the trusted
 repository to the import path. It does not read `.env` or invoke model APIs.
 
-No extra integration service or HTTP calls are needed for these operations.
+Local document and audit operations need no extra integration service or HTTP calls;
+explicit public question discovery is described below.
 The backend app is not started. Hermes uses its existing browser tools to inspect
 employer postings, fill forms and click Submit after authorization. The CLI
 provides local preflight guards and records; it is not a universal ATS submitter.
@@ -29,6 +30,8 @@ status before parsing the entire stdout document. Stop dependent work on failure
 | Initialize | `jobby init --pdf /private/source.pdf [--replace]` | Import authoritative source; replacement invalidates documents and backs up profile |
 | Add | `jobby add /private/posting.json` or `jobby add -` | Store posting; `-` reads JSON stdin |
 | Search | `jobby search 'TERM' --limit 10 --location 'LOCATION' --hours-old 72 [--remote]` | Discovery only; verify against the employer |
+| Public questions | `jobby questions collect --board SLUG --target 100 --per-board-cap 25 --output /home/adcan288/tmp/FRESH` | Incremental Greenhouse-only public GET inventory; no candidate state or submissions |
+| Answer lookup | `jobby questions lookup --input /private/request.json --output /home/adcan288/tmp/FRESH` | Explicit scoped local approvals; unknowns queued, zero model calls |
 | Fit | `jobby fit JOB_ID --evidence /private/fit.json` | Record typed, source-grounded arrangement, employment and qualifications review |
 | Prepare | `jobby prepare JOB_ID` | Generate grounded immutable artifacts; returns pending visual review |
 | Approve | `jobby approve JOB_ID --review /private/review.json` | Record actual operator visual QA of the exact current generation |
@@ -40,6 +43,16 @@ Receipt needs an aware timestamp and actual text or public URL evidence; either
 `--text` or `--url` can be omitted. Omitting `--attempt-id` records a user-reported
 receipt with documents unknown; Hermes must use its captured attempt.
 Screenshot kind is `filled_form` or `employer_confirmation`.
+
+Search location support is deliberately bounded: Ottawa, Toronto or London in
+Ontario; Vancouver in British Columbia; Montreal in Quebec. Include the matching
+province name/code, optionally followed by Canada. Both providers receive
+`City, PROVINCE_CODE, Canada`. Province/territory-wide input is the province name
+or code followed by Canada; `Canada` requests country-wide search. Other cities,
+ambiguous/foreign locations and phone/credential-shaped text are rejected before
+provider use. This is an explicit input set, not geocoding or verification of
+returned postings. JobSpy's raw provider diagnostics are suppressed during adapter
+calls; internally swallowed provider failures can still resemble empty results.
 
 ## Facts, evidence and privacy
 
@@ -259,7 +272,15 @@ Record unsupported forms, missing answers and browser failures truthfully with
 Use the native-only requirements and repository `.venv` described in the root
 setup guide; legacy model API credentials and `.env` are unnecessary. `fit` and
 `approve` import shared FastAPI/Pydantic validators but never start the app.
-Only `search` performs direct JobSpy network discovery. The optional local
+`search` performs direct JobSpy network discovery; `questions collect` uses bounded,
+credential-free public Greenhouse GETs. `questions` commands bypass candidate Store
+initialization. Collection shortfall emits one `ok: false` JSON result and exits 1;
+literal public-source failures and incremental raw records remain in its manifest.
+See the [question inventory and controlled benchmark contract](../docs/QUESTION-BENCHMARK.md)
+for scopes, limits, inert approval schema and parent commands. The maintained runner's
+optional `--controlled-agent-answers` uses explicit non-human synthetic approval for
+first_name/last_name/email only, with exact cache-to-field receipt proof; it gives
+no human approval or employer submission authority. The optional local
 dashboard and generic defaults/overrides are documented in the [runbook](README.md).
 Every operator must obtain current candidate authorization externally. A default
 policy provenance label, successful preflight or this document is not consent.

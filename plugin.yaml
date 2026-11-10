@@ -1,0 +1,13 @@
+name: jobby
+version: 0.1.0
+description: Local source-backed application materials and assisted next actions. No browser submit authority.
+author: Jobby contributors
+requires_hermes: ">=0.22.5"
+provides_tools:
+  - jobby_initialize
+  - jobby_intake
+  - jobby_overview
+  - jobby_prepare
+  - jobby_review
+  - jobby_attempt
+  - jobby_discover

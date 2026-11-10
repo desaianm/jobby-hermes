@@ -36,7 +36,8 @@ def lines(profile,facts):
         fs=[f for f in facts if f['section']==section]
         if not fs: continue
         out.append(('section',section));groups=OrderedDict()
-        for f in profile['facts']:
+        # Employment chronology stays in source order; projects follow relevance.
+        for f in (fs if section=='PROJECTS' else profile['facts']):
             if f['section']==section and any(x['id']==f['id'] for x in fs): groups.setdefault((f['group'],f['date']),[])
         for f in fs: groups[(f['group'],f['date'])].append(f)
         for (group,date),items in groups.items():
@@ -141,7 +142,8 @@ def _prepare(store,id):
     mandatory=[f for f in selected if f['section'] in ('EDUCATION','TECHNICAL SKILLS')]
     roles=set()
     for f in selected:
-        if f['section']=='EXPERIENCE' and f['group'] not in roles: mandatory.append(f);roles.add(f['group'])
+        role=(f['group'],f['date'])
+        if f['section']=='EXPERIENCE' and role not in roles: mandatory.append(f);roles.add(role)
     chosen=mandatory+[f for f in selected if f not in mandatory and f['section']!='SUMMARY'][:10]
     leading=12.5;body_space=3
     while True:
@@ -163,8 +165,9 @@ def _prepare(store,id):
     qa(folder/'resume.pdf',folder/'preview.png');docx(folder/'resume.docx',content,leading,body_space)
     relevant=[f for f in chosen if f['section']=='EXPERIENCE'][:3]
     letter=[('name',profile['name']),('contact',contact_parts(profile)),('body',now()[:10]),('heading',('Re: '+job['title']+' — '+job['company'],'')),('body','Dear Hiring Team,'),('body','Please consider my application for the '+job['title']+' position at '+job['company']+'. My experience relevant to this role includes the following:')]
-    letter += [('body','I '+f['text'][0].lower()+f['text'][1:]) for f in relevant]
-    letter += [('body','I would welcome the opportunity to discuss how this experience could contribute to your team. Thank you for your time and consideration.'),('body','Sincerely,'),('body',profile['name'])]
+    # Keep complete facts as bullets; guessing person or tense can change source claims.
+    letter += [('body','• '+f['text']) for f in relevant]
+    letter += [('body','Thank you for considering my application.'),('body','Sincerely,'),('body',profile['name'])]
     pdf(folder/'cover_letter.pdf',letter,14,6);docx(folder/'cover_letter.docx',letter,14,6);qa(folder/'cover_letter.pdf',folder/'cover_preview.png')
     selection['ranked_fact_ids']=selection['selected_fact_ids'];selection['selected_fact_ids']=[f['id'] for f in chosen]
     selection['gaps']=list(dict.fromkeys(selection['gaps']+job['explanation']))

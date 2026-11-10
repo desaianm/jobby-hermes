@@ -63,6 +63,14 @@ CREATE TRIGGER IF NOT EXISTS immutable_events_delete BEFORE DELETE ON events BEG
     def profile(self):
         p=self.root/'candidate.json'
         return json.loads(fs.read_text(p)) if p.exists() else dict(facts=[],answers={},name='',contact='')
+    def save_discovery(self, data):
+        # Separate namespace: confirming provider options grants no eligibility,
+        # daily policy, legal answer or submission authority.
+        with self.connect() as c:
+            c.execute('BEGIN IMMEDIATE')
+            settings=json.loads(c.execute('SELECT data FROM settings').fetchone()[0])
+            settings['discovery']=data
+            c.execute('UPDATE settings SET data=?',(json.dumps(settings),))
     def redact(self,data):
         from personal_jobby.privacy import sanitize
         return sanitize(data)
@@ -145,6 +153,16 @@ CREATE TRIGGER IF NOT EXISTS immutable_events_delete BEFORE DELETE ON events BEG
     def jobs(self):
         with self.connect() as c: ids=[r[0] for r in c.execute('SELECT id FROM jobs ORDER BY id DESC')]
         return [self.get(i) for i in ids]
+    def discovery_jobs(self):
+        with self.connect() as c:
+            ids=[r[0] for r in c.execute("SELECT DISTINCT job_id FROM events WHERE kind='discovery_observed' ORDER BY job_id")]
+        return [self.get(i) for i in ids]
+    def save_discovery_result(self, data):
+        with self.connect() as c: self.event(c, None, 'discovery_run', data)
+    def discovery_result(self):
+        with self.connect() as c:
+            row=c.execute("SELECT data FROM events WHERE kind='discovery_run' ORDER BY id DESC LIMIT 1").fetchone()
+        return json.loads(row[0]) if row else None
     def blockers(self,j):
         from personal_jobby.daily import Daily
         p=self.profile(); s=self.settings();policy=Daily(self).policy()
