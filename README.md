@@ -80,3 +80,13 @@ python3 -m venv .venv
 CLI state defaults to `~/.local/share/jobby-personal`; an absolute `JOBBY_ROOT` selects a different private workspace. Native plugin calls ignore `JOBBY_ROOT`. A CLI job ID therefore need not identify the same job as a native desk ID. For native readback, operators should use the fresh profile-bound handoff returned by the native tool rather than guessing a workspace.
 
 See [the CLI contract](personal_jobby/CLI.md), [operator workflow](skills/assisted-application/SKILL.md), and [detailed runbook](personal_jobby/README.md) for operator-only commands and review requirements.
+
+## Native desk
+
+![Jobby desk showing source-backed search and document review](docs/images/jobby-desk.png)
+
+Still from the edited native demo using a disclosed non-human test identity. Documents remain pending human review; the desk does not submit applications. The host's chat-provider setup notice is separate from the working local plugin.
+
+## License
+
+[MIT](LICENSE). You may use, modify, redistribute and use the code commercially while retaining the copyright and license notice. Dependencies retain their own licenses.
