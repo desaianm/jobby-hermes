@@ -391,8 +391,8 @@ SEARCH_PREFS = dict(country='Canada', location='Ottawa, ON', remote=False,
                     hours_old=48, per_query=3, total=5, order='lexical')
 
 
-@pytest.mark.parametrize('location', ['Berlin, Germany', 'London', 'Ottawa, ON 416-555-0199',
-                                     'bearer synthetic-example-secret'], ids=['foreign', 'ambiguous', 'phone', 'credential'])
+@pytest.mark.parametrize('location', ['Berlin, Germany', 'Ottawa, ON 416-555-0199',
+                                     'bearer synthetic-example-secret'], ids=['conflicting-country', 'phone', 'credential'])
 def test_search_location_rejection_preserves_confirmation_and_blocks_tampering(desk, tmp_path, monkeypatch, location):
     from test_personal_jobby import updated_fixture
     from personal_jobby.store import Store
@@ -447,7 +447,7 @@ def test_search_adapter_rejects_private_or_unsupported_location_before_provider(
     from personal_jobby.store import Store
     calls = []
     monkeypatch.setattr(jobspy, 'scrape_jobs', lambda **kw: calls.append(kw) or pd.DataFrame())
-    for location in ['Berlin, Germany', 'London', 'Ottawa, ON 416-555-0199', 'bearer synthetic-example-secret']:
+    for location in ['Berlin, Germany', 'Ottawa, ON 416-555-0199', 'bearer synthetic-example-secret']:
         with pytest.raises(ValueError) as error:
             discover(Store(tmp_path), 'Python', 1, location=location)
         assert location not in str(error.value)
@@ -675,7 +675,7 @@ def test_resume_search_setup_requires_explicit_preferences_and_grounded_terms(de
     assert confirmed['preferences'] == {**SEARCH_PREFS, 'location': 'Ottawa, ON, Canada'}
     assert call(ctx, 'jobby_discover', operation='inspect')['confirmed']
     assert not call(ctx, 'jobby_discover', **{**body, 'queries': ['Fixture Candidate']})['ok']
-    for change in ({'country': 'Germany'}, {'location': ''}, {'remote': None}, {'hours_old': 0}, {'total': 26}, {'per_query': 11}):
+    for change in ({'country': 'Atlantis'}, {'location': ''}, {'remote': None}, {'hours_old': 0}, {'total': 26}, {'per_query': 11}):
         assert not call(ctx, 'jobby_discover', **{**body, 'preferences': {**SEARCH_PREFS, **change}})['ok']
     active[0] = active[0].parent / 'other-profile'
     assert call(ctx, 'jobby_discover', operation='inspect')['preferences'] is None
@@ -793,7 +793,7 @@ def test_real_scoped_registry_discovers_search_and_prepares(tmp_path):
     (home / 'config.yaml').write_text('plugins:\n  enabled:\n    - jobby\n')
     bundled = tmp_path / 'empty-bundled'
     bundled.mkdir()
-    script = '''import sys, json, types
+    script = '''import sys, json
 from pathlib import Path
 from contextlib import redirect_stdout
 with redirect_stdout(sys.stderr):
@@ -819,7 +819,7 @@ with redirect_stdout(sys.stderr):
  assert readback['materials']['qa_state']=='pending_visual_review'
  assert readback['materials']['generation_id'] and readback['materials']['artifact_hashes']
  assert readback['job']['attempts']==[]
- # The provider boundary supplies a source-shaped frame; no JobSpy install or network.
+ # Installed JobSpy supplies metadata; the provider boundary supplies a source-shaped frame without network.
  class Row(dict):
   @property
   def index(self): return self.keys()
@@ -827,7 +827,8 @@ with redirect_stdout(sys.stderr):
   def head(self,limit): return self
   def iterrows(self):
    yield 0,Row(title='Python Engineer',company='Fictional Native',location='Ottawa',job_url='https://jobs.example.test/native-discovery',description='Python FastAPI PostgreSQL services',date_posted='2026-11-06')
- sys.modules['jobspy']=types.SimpleNamespace(scrape_jobs=lambda **kw:Frame())
+ import jobspy
+ jobspy.scrape_jobs=lambda **kw:Frame()
  setup=native.call('discover',operation='inspect')
  native.call('discover',operation='confirm',source_token=setup['source_token'],queries=['Python'],preferences=json.loads(sys.argv[4]))
  found=native.call('discover',operation='search')
@@ -914,3 +915,113 @@ def test_operator_readback_preserves_exact_workspace_with_spaces_and_shell_metac
     selected = call(ctx, 'jobby_intake', posting=POSTING, mode='direct')
     assert selected['operator_handoff']['environment'] == {'JOBBY_ROOT': str(active[0] / 'plugin-data/jobby/workspace')}
     assert isinstance(selected['operator_handoff']['argv'], list)
+
+
+@pytest.mark.parametrize('country,location,code,qualified', [
+    ('Germany', 'Berlin', 'DE', 'Berlin, Germany'),
+    ('United States', 'New York, NY', 'US', 'New York, NY, USA'),
+    ('United Kingdom', 'London', 'GB', 'London, UK'),
+    ('India', 'मुंबई, Maharashtra', 'IN', 'मुंबई, Maharashtra, India'),
+    ('Canada', 'Ottawa, ON', 'CA', 'Ottawa, ON, Canada'),
+])
+def test_international_adapter_reaches_real_jobspy_request_boundary(tmp_path, monkeypatch, country, location, code, qualified):
+    from personal_jobby.search import discover
+    from personal_jobby.store import Store
+    from jobspy.util import RequestsRotating
+    requests = []
+    class Response:
+        status_code = 200
+        text = ""
+        def json(self):
+            return {"data": {"jobSearch": {"results": [], "pageInfo": {"nextCursor": None}}}}
+    def request(session, method, url, **options):
+        requests.append((method, url, {**options, "headers": dict(session.headers)}))
+        return Response()
+    monkeypatch.setattr(RequestsRotating, "request", request)
+    # Real scrape_jobs/Indeed/LinkedIn run; only outgoing HTTP is stubbed.
+    result = discover(Store(tmp_path), "Python", 1, country=country, location=location)
+    assert result["jobs"] == []
+    indeed = next(options for method, url, options in requests if "apis.indeed.com" in url)
+    linkedin = next(options for method, url, options in requests if "linkedin.com" in url)
+    assert indeed["headers"]["indeed-co"] == code
+    assert qualified in indeed["json"]["query"]
+    assert linkedin["params"]["location"] == qualified
+
+
+@pytest.mark.parametrize('country,location', [
+    ('Germany\n', 'Berlin'), ('Germany\t', 'Berlin'), ('Germany\x00', 'Berlin'),
+    ('Atlantis', 'Example'), ('fixture@example.test', 'Berlin'),
+    ('Germany', 'fixture@example.test'), ('Germany', '+49 30 12345678'),
+    ('Germany', 'Berlin\nMitte'), ('Germany', 'Berlin\u200b'),
+    ('Germany', 'https://example.test'), ('Germany', 'example.test'),
+    ('Germany', 'token=synthetic-secret'), ('Germany', 'bearer synthetic-secret'),
+    ('Germany', 'I built Python services'), ('Germany', 'Managed a team of developers'),
+    ('Germany', 'Berlin, Canada'), ('Germany', 'A'*121),
+    ('Germany', 'a b c d e f'), ('Germany', '1234567'),
+    ('Germany', 123), (123, 'Berlin'),
+])
+def test_international_private_or_unsupported_inputs_never_reach_transport(tmp_path, monkeypatch, country, location):
+    from personal_jobby.search import discover
+    from personal_jobby.store import Store
+    from jobspy.util import RequestsRotating
+    requests = []
+    monkeypatch.setattr(RequestsRotating, 'request', lambda *args, **kwargs: requests.append(True))
+    with pytest.raises(ValueError):
+        discover(Store(tmp_path), 'Python', 1, country=country, location=location)
+    assert requests == []
+
+
+def test_native_international_setup_persists_exact_choices_and_retires_with_source_or_profile(desk, tmp_path, monkeypatch):
+    from test_personal_jobby import updated_fixture
+    from jobspy.util import RequestsRotating
+    ctx, active = desk
+    pdf = tmp_path / 'synthetic-source.pdf'
+    updated_fixture(pdf)
+    call(ctx, 'jobby_initialize', pdf_path=str(pdf))
+    current = call(ctx, 'jobby_discover', operation='inspect')
+    assert {'USA', 'UK', 'Germany', 'India', 'Canada'} <= set(current['supported_countries'])
+    requests = []
+    class Response:
+        status_code = 200
+        text = ''
+        def json(self):
+            return {'data': {'jobSearch': {'results': [], 'pageInfo': {'nextCursor': None}}}}
+    def request(session, method, url, **options):
+        requests.append((dict(session.headers), options))
+        return Response()
+    monkeypatch.setattr(RequestsRotating, 'request', request)
+    for country, location, code in [('USA', 'Boston, MA, USA', 'US'), ('UK', 'London, UK', 'GB'),
+                                    ('Germany', 'München, Germany', 'DE'), ('India', 'Delhi, India', 'IN'),
+                                    ('Canada', 'Ottawa, ON, Canada', 'CA')]:
+        prefs = {**SEARCH_PREFS, 'country': country, 'location': location, 'total': 1, 'per_query': 1}
+        confirmed = call(ctx, 'jobby_discover', operation='confirm', source_token=current['source_token'], queries=['Python'], preferences=prefs)
+        assert confirmed['ok'] and confirmed['confirmed'] and confirmed['preferences'] == prefs
+        assert call(load(), 'jobby_discover', operation='inspect')['preferences'] == prefs
+        requests.clear()
+        found = call(ctx, 'jobby_discover', operation='search')
+        assert found['ok'] and found['last_run']['outcome'] == 'empty'
+        assert any(headers.get('indeed-co') == code and location in options['json']['query'] for headers, options in requests if 'json' in options)
+        assert any(options.get('params', {}).get('location') == location for headers, options in requests)
+    active[0] = active[0].parent / 'profile-b'
+    assert not call(ctx, 'jobby_discover', operation='inspect')['confirmed']
+    active[0] = active[0].parent / 'profile-a'
+    pdf.write_bytes(b'changed synthetic source')
+    requests.clear()
+    assert not call(ctx, 'jobby_discover', operation='inspect')['confirmed']
+    assert not call(ctx, 'jobby_discover', operation='search')['ok']
+    assert requests == []
+
+
+def test_enum_country_without_selected_adapter_mapping_is_not_advertised_or_sent(desk, tmp_path, monkeypatch):
+    from jobspy.indeed.constant import country_codes
+    from jobspy.model import Country
+    from jobspy.util import RequestsRotating
+    from personal_jobby.search import discover
+    from personal_jobby.store import Store
+    monkeypatch.delitem(country_codes, Country.AUSTRALIA)
+    ctx, _ = desk
+    assert 'Australia' not in call(ctx, 'jobby_discover', operation='inspect')['supported_countries']
+    requests = []
+    monkeypatch.setattr(RequestsRotating, 'request', lambda *args, **kwargs: requests.append(True))
+    with pytest.raises(ValueError): discover(Store(tmp_path), 'Python', 1, country='Australia', location='Sydney')
+    assert requests == []

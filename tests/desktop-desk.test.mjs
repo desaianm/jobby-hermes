@@ -159,7 +159,7 @@ test('harness runs the delayed selected-job download regression after its real p
 
 test('first-use search setup shows grounded evidence and requires explicit provider choices',()=>{
  const save=[];
- const data={confirmed:false,source_token:'a'.repeat(64),preferences:null,queries:[],proposals:[{term:'Python',evidence:[{fact_id:'skills-1',excerpt:'Python, FastAPI',role:''}]}],warnings:[],shortlist:[]};
+ const data={confirmed:false,supported_countries:['Canada','Germany','India','UK','USA'],source_token:'a'.repeat(64),preferences:null,queries:[],proposals:[{term:'Python',evidence:[{fact_id:'skills-1',excerpt:'Python, FastAPI',role:''}]}],warnings:[],shortlist:[]};
  assert.equal(typeof module.namespace.SearchSetup,'function');
  const view=module.namespace.SearchSetup({data,busy:false,confirm:value=>save.push(value)});
  const nodes=[];
@@ -168,11 +168,50 @@ test('first-use search setup shows grounded evidence and requires explicit provi
  const labels=nodes.filter(n=>n.type==='label').map(n=>n.props.children);
  const serialized=JSON.stringify(view);
  assert.match(serialized,/Python, FastAPI/);
- assert.match(serialized,/Canada only/);
+ assert.match(serialized,/provider-supported/i);
+ for(const country of data.supported_countries) assert.ok(nodes.some(n=>n.type==='select-item' && n.props.value===country),country);
  assert.doesNotMatch(serialized,/Toronto|120000|CAD/);
- for(const label of ['Search location in Canada','Freshness in hours','Results per query','Total results per run']) assert.ok(serialized.includes(label),label);
+ for(const label of ['Public search location','Freshness in hours','Results per query','Total results per run']) assert.ok(serialized.includes(label),label);
  assert.ok(nodes.some(n=>n.type==='button' && n.props.disabled && n.props.children==='Confirm search setup'));
  assert.equal(save.length,0);
+});
+
+test('country and location edits require new explicit confirmation before international search',async()=>{
+ const states=[];let cursor=0;
+ const statefulReact=new SyntheticModule(['createElement','useState','useRef','useLayoutEffect'],function(){
+  this.setExport('createElement',React.createElement);
+  this.setExport('useState',initial=>{const index=cursor++;if(!(index in states))states[index]=initial;return [states[index],value=>{states[index]=typeof value==='function'?value(states[index]):value;}];});
+  this.setExport('useRef',React.useRef);this.setExport('useLayoutEffect',()=>{});
+ });
+ const component=new SourceTextModule(await readFile(new URL('../desktop/plugin.js',import.meta.url),'utf8'));
+ await component.link(name=>name==='@hermes/plugin-sdk'?sdkModule:statefulReact);await component.evaluate();
+ const saves=[];let searches=0;
+ const data={confirmed:true,supported_countries:['Canada','Germany','India','UK','USA'],source_token:'a'.repeat(64),queries:['Python'],preferences:{country:'Canada',location:'Ottawa, ON, Canada',remote:false,hours_old:48,per_query:3,total:5,order:'lexical'},proposals:[{term:'Python',evidence:[]}],shortlist:[]};
+ let nodes=[];
+ const render=()=>{cursor=0;nodes=[];const view=component.namespace.SearchSetup({data,busy:false,confirm:value=>saves.push(value),search:()=>searches++});const visit=value=>{if(!value||typeof value!=='object')return;if(Array.isArray(value)){value.forEach(visit);return;}nodes.push(value);visit(value.props?.children);};visit(view);};
+ const button=label=>nodes.find(n=>n.type==='button'&&n.props.children===label);
+ const country=()=>nodes.find(n=>n.type==='select-root'&&n.props.children?.some(child=>child.props?.['aria-label']==='Search country'));
+ const approval=()=>nodes.find(n=>n.type==='checkbox'&&n.props.onCheckedChange&&n.props.checked!==undefined&&nodes.some(label=>label.type==='label'&&label.props.children?.includes(n)&&label.props.children.includes('I confirm these search preferences and source-backed query terms')));
+ render();assert.equal(button('Search approved terms').props.disabled,false);
+ approval().props.onCheckedChange(true);render();
+ country().props.onValueChange('Germany');render();
+ assert.equal(approval().props.checked,false);
+ assert.equal(button('Search approved terms').props.disabled,true);
+ assert.equal(button('Confirm search setup').props.disabled,true);
+ const location=nodes.find(n=>n.type==='input'&&n.props.value==='Ottawa, ON, Canada');
+ location.props.onChange({target:{value:'Berlin, Germany'}});render();
+ approval().props.onCheckedChange(true);render();
+ assert.equal(button('Confirm search setup').props.disabled,false);
+ nodes.find(n=>n.type==='form').props.onSubmit({preventDefault(){}});
+ assert.equal(saves.length,1);assert.deepEqual(JSON.parse(JSON.stringify(saves[0].preferences)),{...data.preferences,country:'Germany',location:'Berlin, Germany'});
+ assert.equal(searches,0);
+ // Backend readback becomes the new saved setup, as on the real desk remount.
+ Object.assign(data,{preferences:saves[0].preferences});states.length=0;render();
+ assert.equal(approval().props.checked,false);
+ assert.equal(button('Search approved terms').props.disabled,false);
+ button('Search approved terms').props.onClick();assert.equal(searches,1);
+ country().props.onValueChange('Atlantis');render();approval().props.onCheckedChange(true);render();
+ assert.equal(button('Confirm search setup').props.disabled,true);
 });
 
 test('replaced resume starts query selection from its current evidence',()=>{
@@ -266,7 +305,7 @@ test('live run requires exact confirmed bounds and new observations beyond the p
  assert.equal(typeof assertNativeLiveSetup,'function');
  assert.equal(typeof assertNativeLiveRun,'function');
  // Contract data only; never used as a provider or native acceptance receipt.
- const setup={ok:true,confirmed:true,submission_available:false,source_token:'a'.repeat(64),queries:['Python'],preferences:{country:'Canada',location:'Toronto, ON, Canada',remote:false,hours_old:720,per_query:5,total:5,order:'newest'},proposals:[{term:'Python',evidence:[{fact_id:'skills-1',excerpt:'Python-based Jobby CLI'}]}]};
+ const setup={ok:true,confirmed:true,supported_countries:['Canada'],submission_available:false,source_token:'a'.repeat(64),queries:['Python'],preferences:{country:'Canada',location:'Toronto, ON, Canada',remote:false,hours_old:720,per_query:5,total:5,order:'newest'},proposals:[{term:'Python',evidence:[{fact_id:'skills-1',excerpt:'Python-based Jobby CLI'}]}]};
  assert.doesNotThrow(()=>assertNativeLiveSetup(setup));
  for(const change of [{confirmed:false},{submission_available:true},{queries:['AI Engineer']},{source_token:null},{proposals:[]},{preferences:{...setup.preferences,total:25}}]) assert.throws(()=>assertNativeLiveSetup({...setup,...change}));
  const job={id:1,job_url:'https://ca.indeed.com/viewjob?jk=contract',matching_terms:['python'],evidence:[{fact_id:'skills-1',excerpt:'Python-based Jobby CLI',matching_terms:['python']}]};
@@ -300,7 +339,7 @@ test('live download receipt separates native dialog/events from four exact saved
 });
 
 function liveContract() {
- const setup={ok:true,confirmed:true,submission_available:false,source_token:'a'.repeat(64),queries:['Python'],preferences:{country:'Canada',location:'Toronto, ON, Canada',remote:false,hours_old:720,per_query:5,total:5,order:'newest'},proposals:[{term:'Python',evidence:[{fact_id:'skills-1',excerpt:'Python-based Jobby CLI'}]}]};
+ const setup={ok:true,confirmed:true,supported_countries:['Canada'],submission_available:false,source_token:'a'.repeat(64),queries:['Python'],preferences:{country:'Canada',location:'Toronto, ON, Canada',remote:false,hours_old:720,per_query:5,total:5,order:'newest'},proposals:[{term:'Python',evidence:[{fact_id:'skills-1',excerpt:'Python-based Jobby CLI'}]}]};
  const job={id:7,company:'Synthetic',title:'Python Engineer',job_url:'https://ca.indeed.com/viewjob?jk=synthetic',location:'Toronto',description:'Python',status:'discovered',explanation:[],attempts:[],original_source:{site:'indeed',job_url:'https://ca.indeed.com/viewjob?jk=synthetic'}};
  const shown={job,events:[{id:23,job_id:7,kind:'discovery_observed',data:'{"query":"Python","private_extra":"withheld"}'}],materials:null,current_artifact_directory:null};
  const status={candidate_initialized:true,fact_count:1,settings:{discovery:{source_token:setup.source_token,queries:setup.queries,preferences:setup.preferences}}};

@@ -9,7 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from personal_jobby.core import Job, Settings, Salary, exact_evidence
 from personal_jobby.store import Store, ROOT, private_write, now
 from personal_jobby.documents import prepare, NAMES
-from personal_jobby.search import discover
+from personal_jobby.search import discover, SearchLocation
 from personal_jobby import private_fs as fs
 
 STATIC=Path(__file__).parent/'static'
@@ -25,10 +25,13 @@ class Receipt(BaseModel):
     url:str=Field(default='',max_length=2000)
     timestamp:str=Field(max_length=100)
     attempt_id:str|None=Field(default=None,pattern='^[a-f0-9]{32}$')
-class Search(BaseModel):
-    model_config=ConfigDict(extra='forbid')
+class Search(SearchLocation):
+    country: str = Field(default='Canada',min_length=1,max_length=80)
+    location: str = Field(default='Toronto, ON, Canada',min_length=1,max_length=120)
     term:str=Field(min_length=1,max_length=200)
     limit:int=Field(default=10,ge=1,le=25)
+    remote:bool|None=None
+    hours_old:int=Field(default=72,ge=1,le=8760)
 class Answers(BaseModel):
     model_config=ConfigDict(extra='forbid')
     work_eligibility:str=Field(default='',max_length=2000)
@@ -186,6 +189,6 @@ def create_app(root=ROOT):
         return Response(data,media_type=guess_type(filename)[0] or 'application/octet-stream',headers={'Content-Disposition':'attachment; filename="'+filename+'"'})
     @app.post('/api/search')
     def search(data:Search):
-        try: return discover(store,data.term,data.limit)
+        try: return discover(store,**data.model_dump())
         except Exception as e: raise HTTPException(502,'Search failed or source blocked. No results fabricated; try later or add a posting manually.') from e
     return app

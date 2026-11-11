@@ -1,6 +1,6 @@
 # Jobby for Hermes
 
-Turn a source resume into a persistent job shortlist and source-backed resume and cover-letter drafts. The native Jobby desk supports importing a resume, confirming a bounded Canadian search, inspecting posting evidence, and preparing PDF/DOCX files for review.
+Turn a source resume into a persistent job shortlist and source-backed resume and cover-letter drafts. The native Jobby desk supports importing a resume, confirming a bounded search in a provider-supported country, inspecting posting evidence, and preparing PDF/DOCX files for review.
 
 The desk does not submit applications. Auto-apply is inactive. Search confirmation, selecting a posting, and downloading documents do not grant application authority or record document approval.
 
@@ -19,7 +19,7 @@ For a reproducible installation, add `--ref FULL_COMMIT_SHA` to the install comm
 
 Review the installer's dependency and trust prompts. Enable Jobby in the backend profile you intend to use, then enable its Desktop contribution in **Capabilities → Plugins**. Open **Jobby desk** from the sidebar or **Open Jobby desk** from the command palette. For a remote backend, the Desktop contribution must also be installed on the desktop machine through the host's supported installation flow.
 
-Recorded native acceptance: untouched stock Hermes v0.23.0 on Linux passed isolated local-directory package-manager admission and a native source import, Indeed-backed search, document preparation, PDF previews, all four OS-dialog saves, reload persistence and CLI generation/hash readback. The shell used an existing Electron/dev renderer. Check Git installation and dependency-inclusive validation against the exact public commit you intend to use; this native recording alone does not establish them. A packaged Desktop installer and full native race matrix remain unverified; human approval and employer fill/submit/receipt were not qualified.
+Historical Canadian-example native acceptance (earlier UI): untouched stock Hermes v0.23.0 on Linux passed isolated local-directory package-manager admission and a native source import, Indeed-backed search, document preparation, PDF previews, all four OS-dialog saves, reload persistence and CLI generation/hash readback. The shell used an existing Electron/dev renderer. Check Git installation and dependency-inclusive validation against the exact public commit you intend to use; this native recording alone does not establish them. A packaged Desktop installer and full native race matrix remain unverified; human approval and employer fill/submit/receipt were not qualified.
 
 Development-only warning: the complete source includes host-specific qualification scripts and historical evidence notes. `hermes plugins validate` warns about the opt-in native qualification runner's `PluginManager` import. That runner is not a plugin runtime entrypoint; runtime registration and the desk use the supported plugin APIs. Read the warning rather than treating a passing validator as catalog acceptance.
 
@@ -27,7 +27,7 @@ Development-only warning: the complete source includes host-specific qualificati
 
 1. **Import your resume.** Enter the absolute PDF path on the machine running the Hermes backend and choose **Import source PDF**. This is a path field, not a file upload or file picker. Use an authoritative text PDF, up to 8 MiB, with the supported Experience, Projects, Technical Skills and Education sections and dated employment headings. Scanned PDFs and other layouts may be rejected. The file and its parent paths must not be symlinks. Inspect the imported facts before relying on generated materials.
 
-2. **Confirm a search.** Under **Find jobs from your resume**, inspect the source excerpts and choose one to three suggested role or skill terms. Choose Canada, a supported location, remote-only or all arrangements, freshness, result limits and shortlist order. Tick **I confirm these search preferences and source-backed query terms**, then choose **Confirm search setup**. Search confirmation covers these search preferences only; it does not establish work authorization, employer eligibility or application consent.
+2. **Confirm a search.** Under **Find jobs from your resume**, inspect the source excerpts and choose one to three suggested role or skill terms. Choose a country from the backend-provided options, enter a public city/region location for it, and choose remote-only or all arrangements, freshness, result limits and shortlist order. Tick **I confirm these search preferences and source-backed query terms**, then choose **Confirm search setup**. Search confirmation covers these search preferences only; it does not establish work authorization, employer eligibility or application consent.
 
 3. **Search and inspect.** Choose **Search approved terms**. The persistent shortlist shows posting links, matching terms, source excerpts, unmatched posting terms and unknowns. Select a posting by its title/company button. Lexical coverage measures wording overlap; it does not establish suitability or hiring probability. Inspect the source listing and verify location, salary, dates and qualifications yourself.
 
@@ -39,7 +39,9 @@ Already have a posting? Use **Or paste a selected posting**. Enter company, job 
 
 ## Search limits
 
-Search currently supports Canada only. Accepted city/province pairs are Ottawa, ON; Toronto, ON; London, ON; Vancouver, BC; and Montreal, QC. You can also use a province or territory name/code followed by Canada, or simply Canada. Returned posting geography still needs verification.
+Discovery supports selecting one provider-supported country per search, including Canada, USA, UK, Germany and India. Country options come from the installed JobSpy country enum intersected with its Indeed adapter mapping; this is not a worldwide query or a guarantee of live provider availability. JobSpy country aliases are normalized. Enter a public city/region name (for example Berlin for Germany or Mumbai, Maharashtra for India), or the selected country for country-wide search. Both providers receive an explicit country-qualified location, and Indeed receives the selected country flag. Earlier Canadian city/province normalization remains compatible.
+
+Locations are bounded to 120 characters and at most three comma-separated components, each with at most five words. Unicode letters, name punctuation and short abbreviations are supported; digits, control characters, URLs, contact/credential syntax and recognizable resume prose are rejected. This is input validation, not geocoding or a guarantee that arbitrary sensitive prose can be recognized. Enter public place names only. Returned posting geography and hiring eligibility still need verification; chosen search country establishes neither residence nor work authorization.
 
 Limits are one to three approved query terms, 1–720 hours of freshness, 1–10 results per query and 1–25 total results per run. Up to 100 stored shortlist entries are displayed. Changing confirmed preferences requires confirmation again; replacing or changing the source also requires fresh confirmation.
 
@@ -85,7 +87,7 @@ See [the CLI contract](personal_jobby/CLI.md), [operator workflow](skills/assist
 
 ![Jobby desk showing source-backed search and document review](docs/images/jobby-desk.png)
 
-Still from the edited native demo using a disclosed non-human test identity. Documents remain pending human review; the desk does not submit applications. The host's chat-provider setup notice is separate from the working local plugin.
+Still from the earlier Canada-only UI/example in the edited native demo, using a disclosed non-human test identity. The image and recording are historical Canadian-example evidence, not acceptance of the current international UI or live searches in other countries. Documents remain pending human review; the desk does not submit applications. The host's chat-provider setup notice is separate from the working local plugin.
 
 ## License
 

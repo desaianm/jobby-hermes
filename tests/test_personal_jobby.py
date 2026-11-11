@@ -67,6 +67,23 @@ def test_security(tmp_path):
  assert c.get('/api/jobs/1/artifacts/%2E%2E%2Fcandidate.json').status_code==404
  assert c.patch('/api/jobs/1/status',json={'status':'applied'}).status_code==422
  assert c.get('/api/state').json()['submission_adapter']=='unavailable'
+
+def test_legacy_api_propagates_international_search_and_keeps_old_defaults(tmp_path, monkeypatch):
+ import jobspy
+ import pandas as pd
+ calls=[]
+ monkeypatch.setattr(jobspy,'scrape_jobs',lambda **kw: calls.append(kw) or pd.DataFrame())
+ client=TestClient(create_app(tmp_path),base_url='http://localhost')
+ response=client.post('/api/search',json=dict(term='Python',country='United Kingdom',location='London',remote=True,hours_old=48))
+ assert response.status_code==200, response.text
+ assert calls[-1]['country_indeed']=='UK' and calls[-1]['location']=='London, UK'
+ assert calls[-1]['is_remote'] is True and calls[-1]['hours_old']==48
+ assert client.post('/api/search',json=dict(term='Python')).status_code==200
+ assert calls[-1]['country_indeed']=='Canada' and calls[-1]['location']=='Toronto, ON, Canada'
+ before=len(calls)
+ for change in [dict(country='Atlantis'),dict(location='fixture@example.test'),dict(remote='true'),dict(country='Germany',location='Berlin',extra=True)]:
+  assert client.post('/api/search',json=dict(term='Python',**change)).status_code==422
+ assert len(calls)==before
 from personal_jobby.core import assess, DEFAULTS, Job
 from copy import deepcopy
 

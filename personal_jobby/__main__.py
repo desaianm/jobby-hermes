@@ -11,7 +11,7 @@ def main():
     init=sub.add_parser('init'); init.add_argument('--pdf',required=True); init.add_argument('--replace',action='store_true',help='Back up old private profile and invalidate documents')
     status=sub.add_parser('status');status.add_argument('--brief',action='store_true',help='Safe counts and short job summaries (also the default)')
     add=sub.add_parser('add'); add.add_argument('json_file',help='Posting JSON path (or - for stdin)')
-    search=sub.add_parser('search'); search.add_argument('term'); search.add_argument('--limit',type=int,default=10);search.add_argument('--location',default='Toronto, ON, Canada');search.add_argument('--remote',action='store_true',default=None);search.add_argument('--hours-old',type=int,default=72)
+    search=sub.add_parser('search'); search.add_argument('term'); search.add_argument('--limit',type=int,default=10);search.add_argument('--country',default='Canada',help='JobSpy-supported country (Canada is the compatibility default)');search.add_argument('--location',default='Toronto, ON, Canada');search.add_argument('--remote',action='store_true',default=None);search.add_argument('--hours-old',type=int,default=72)
     show=sub.add_parser('show',help='Sanitized job, events and current immutable materials'); show.add_argument('job_id',type=int)
     sub.add_parser('profile',help='Public source facts and answers; phone presence only')
     fit=sub.add_parser('fit',help='Record source-grounded fit evidence'); fit.add_argument('job_id',type=int); fit.add_argument('--evidence',required=True,help='Private JSON, no symlinks, at most 16000 bytes')
@@ -62,7 +62,7 @@ def main():
                 result=store.add(json.loads(sys.stdin.read() if args.json_file=='-' else Path(args.json_file).read_text()))
             elif args.command=='search':
                 from personal_jobby.search import discover
-                result=discover(store,args.term,args.limit,location=args.location,remote=args.remote,hours_old=args.hours_old)
+                result=discover(store,args.term,args.limit,country=args.country,location=args.location,remote=args.remote,hours_old=args.hours_old)
             elif args.command=='prepare':
                 from personal_jobby.documents import prepare
                 result=prepare(store,args.job_id)

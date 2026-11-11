@@ -5,9 +5,10 @@ import re
 import logging
 import threading
 import sys
+import unicodedata
 from contextlib import contextmanager
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationInfo
 from personal_jobby.core import public_url
 from personal_jobby.privacy import sanitize_text
 
@@ -54,7 +55,7 @@ def _provider_diagnostics():
                 logger.propagate = propagate
 
 
-# Explicit adapter inputs, not a city geocoder. Other cities remain unsupported.
+# Preserve normalization of earlier Canadian inputs; this is not a geocoder.
 PROVINCES = dict(AB='Alberta', BC='British Columbia', MB='Manitoba', NB='New Brunswick',
                 NL='Newfoundland and Labrador', NS='Nova Scotia', NT='Northwest Territories',
                 NU='Nunavut', ON='Ontario', PE='Prince Edward Island', QC='Quebec',
@@ -63,22 +64,41 @@ SEARCH_CITIES = (('Ottawa', 'ON'), ('Toronto', 'ON'), ('London', 'ON'),
                  ('Vancouver', 'BC'), ('Montreal', 'QC'))
 
 
-class SearchPreferences(BaseModel):
-    """Provider options, separate from eligibility and submission settings."""
+def supported_countries():
+    """Indeed requires a mapped country; LinkedIn uses the qualified location."""
+    from jobspy.model import Country
+    from jobspy.indeed.constant import country_codes
+    return sorted(country.value.upper() if country.value in ('usa', 'uk') else country.value.title()
+                  for country in Country if country in country_codes)
+
+
+class SearchLocation(BaseModel):
+    """Bounded public place names, separate from residence or legal eligibility."""
     model_config = ConfigDict(extra='forbid', strict=True, hide_input_in_errors=True)
-    country: Literal['Canada']
+    country: str = Field(min_length=1, max_length=80, description='Provider-supported country; inspect supported_countries for canonical choices. JobSpy aliases are accepted.')
     location: str = Field(min_length=1, max_length=120)
-    remote: bool
-    hours_old: int = Field(ge=1, le=720)
-    per_query: int = Field(ge=1, le=10)
-    total: int = Field(ge=1, le=25)
-    order: Literal['lexical', 'newest', 'oldest']
+
+    @field_validator('country')
+    @classmethod
+    def country_name(cls, value):
+        from jobspy.model import Country
+        from jobspy.indeed.constant import country_codes
+        if sanitize_text(value) != value or any(unicodedata.category(c).startswith('C') for c in value):
+            raise ValueError('Provider-supported search country required')
+        try:
+            country = Country(value)
+            if country not in country_codes: raise ValueError
+        except ValueError:
+            raise ValueError('Provider-supported search country required') from None
+        return country.value.upper() if country.value in ('usa', 'uk') else country.value.title()
 
     @field_validator('location')
     @classmethod
-    def place(cls, value):
-        if not isinstance(value, str) or sanitize_text(value) != value:
-            raise ValueError('Supported Canadian search location required')
+    def place(cls, value, info: ValidationInfo):
+        country = info.data.get('country')
+        invalid = 'Bounded public city/region search location required'
+        if not country or sanitize_text(value) != value or any(unicodedata.category(c).startswith('C') for c in value):
+            raise ValueError(invalid)
         key = ', '.join(part.strip().casefold() for part in value.strip().split(','))
         supported = {'canada': 'Canada'}
         for code, name in PROVINCES.items():
@@ -88,9 +108,40 @@ class SearchPreferences(BaseModel):
             for province in (code, PROVINCES[code]):
                 for suffix in ('', ', canada'):
                     supported[f'{city.casefold()}, {province.casefold()}{suffix}'] = f'{city}, {code}, Canada'
-        if key not in supported:
-            raise ValueError('Supported Canadian search location required')
-        return supported[key]
+        if country == 'Canada' and key in supported: return supported[key]
+        # No digits, addresses, URLs, contact/credential syntax or free-form prose.
+        # Letters/marks support international names; punctuation is name-only.
+        if any(not (unicodedata.category(c)[0] in 'LM' or c in " ,.'’-‐‑") for c in value):
+            raise ValueError(invalid)
+        parts = [part.strip() for part in value.strip().split(',')]
+        if not 1 <= len(parts) <= 3 or any(not part or len(part.split()) > 5 for part in parts):
+            raise ValueError(invalid)
+        for word in ' '.join(parts).split():
+            if not any(c.isalpha() for c in word) or ('.' in word and not re.fullmatch(r'[^.]{1,3}\.', word)):
+                raise ValueError(invalid)
+        if re.search(r'\b(?:I|my|me|we|our|resume|CV|email|phone|password|passwd|passphrase|token|secret|credential|bearer|authorization|cookie|contact|built|developed|managed|led|worked|experience|years|engineer|skills|Python|JavaScript)\b', value, re.I):
+            raise ValueError(invalid)
+        from jobspy.model import Country
+        # Normalize a country suffix/alias and reject an explicit conflicting one.
+        try: suffix = Country(parts[-1])
+        except ValueError: suffix = None
+        if suffix is not None:
+            if suffix != Country(country): raise ValueError(invalid)
+            parts.pop()
+        elif len(parts) == 3:
+            raise ValueError(invalid)
+        normalized = ', '.join(parts + [country])
+        if len(normalized) > 120: raise ValueError(invalid)
+        return normalized
+
+
+class SearchPreferences(SearchLocation):
+    """Provider options, separate from eligibility and submission settings."""
+    remote: bool
+    hours_old: int = Field(ge=1, le=720)
+    per_query: int = Field(ge=1, le=10)
+    total: int = Field(ge=1, le=25)
+    order: Literal['lexical', 'newest', 'oldest']
 
 
 # Controlled public vocabulary: resume sentences, employers and contact values
@@ -166,7 +217,7 @@ def setup(store):
     confirmed = bool(token and saved.get('source_token') == token and preferences and queries)
     return dict(ok=True, proposals=suggested, source_token=token,
                 confirmed=confirmed, preferences=preferences,
-                queries=queries, supported_countries=['Canada'],
+                queries=queries, supported_countries=supported_countries(),
                 last_run=store.discovery_result(),
                 shortlist=shortlist(store, profile if token else dict(facts=[]), (preferences or {}).get('order', 'lexical')),
                 ranking_method='Distinct exact lexical overlap after reviewed terminology equivalences; not semantic fit or hiring probability.',
@@ -236,7 +287,7 @@ def _run(store):
         if remaining <= 0: break
         limit = min(preferences.per_query, remaining)
         try:
-            result = discover(store, term, limit, location=preferences.location, remote=preferences.remote,
+            result = discover(store, term, limit, country=preferences.country, location=preferences.location, remote=preferences.remote,
                               hours_old=preferences.hours_old, record_discovery=True)
             observed.update(j['id'] for j in result['jobs'])
             errors.extend(dict(query=term, code='listing_invalid', message='Listing validation failed; source values withheld.') for _ in result['errors'])
@@ -251,12 +302,12 @@ def _run(store):
                                      unique_jobs_observed=len(observed), requested=preferences.total-remaining))
     return setup(store)
 
-def discover(store,term,limit=10,*,location='Toronto, ON, Canada',remote=None,hours_old=72,record_discovery=False):
+def discover(store,term,limit=10,*,country='Canada',location='Toronto, ON, Canada',remote=None,hours_old=72,record_discovery=False):
     if not term.strip() or len(term)>200 or not 1<=limit<=25: raise ValueError('Search requires term and limit 1–25')
     if not isinstance(location,str) or not location.strip() or len(location)>500 or type(hours_old) is not int or not 1<=hours_old<=8760 or (remote is not None and type(remote) is not bool): raise ValueError('Invalid bounded search options')
-    location = SearchPreferences.place(location)
+    place = SearchLocation(country=country, location=location)
     from jobspy import scrape_jobs
-    options=dict(site_name=['indeed','linkedin'],search_term=term,location=location,country_indeed='Canada',results_wanted=limit,hours_old=hours_old)
+    options=dict(site_name=['indeed','linkedin'],search_term=term,location=place.location,country_indeed=place.country,results_wanted=limit,hours_old=hours_old)
     if remote is not None: options['is_remote']=remote
     with _provider_diagnostics():
         frame=scrape_jobs(**options)

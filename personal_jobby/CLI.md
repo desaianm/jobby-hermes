@@ -29,7 +29,7 @@ status before parsing the entire stdout document. Stop dependent work on failure
 | Show | `jobby show JOB_ID` | Sanitized `job`, `events`, `materials`, `current_artifact_directory` |
 | Initialize | `jobby init --pdf /private/source.pdf [--replace]` | Import authoritative source; replacement invalidates documents and backs up profile |
 | Add | `jobby add /private/posting.json` or `jobby add -` | Store posting; `-` reads JSON stdin |
-| Search | `jobby search 'TERM' --limit 10 --location 'LOCATION' --hours-old 72 [--remote]` | Discovery only; verify against the employer |
+| Search | `jobby search 'TERM' --limit 10 --country 'COUNTRY' --location 'LOCATION' --hours-old 72 [--remote]` | Discovery only; verify against the employer |
 | Public questions | `jobby questions collect --board SLUG --target 100 --per-board-cap 25 --output /home/adcan288/tmp/FRESH` | Incremental Greenhouse-only public GET inventory; no candidate state or submissions |
 | Answer lookup | `jobby questions lookup --input /private/request.json --output /home/adcan288/tmp/FRESH` | Explicit scoped local approvals; unknowns queued, zero model calls |
 | Fit | `jobby fit JOB_ID --evidence /private/fit.json` | Record typed, source-grounded arrangement, employment and qualifications review |
@@ -44,15 +44,24 @@ Receipt needs an aware timestamp and actual text or public URL evidence; either
 receipt with documents unknown; Hermes must use its captured attempt.
 Screenshot kind is `filled_form` or `employer_confirmation`.
 
-Search location support is deliberately bounded: Ottawa, Toronto or London in
-Ontario; Vancouver in British Columbia; Montreal in Quebec. Include the matching
-province name/code, optionally followed by Canada. Both providers receive
-`City, PROVINCE_CODE, Canada`. Province/territory-wide input is the province name
-or code followed by Canada; `Canada` requests country-wide search. Other cities,
-ambiguous/foreign locations and phone/credential-shaped text are rejected before
-provider use. This is an explicit input set, not geocoding or verification of
-returned postings. JobSpy's raw provider diagnostics are suppressed during adapter
-calls; internally swallowed provider failures can still resemble empty results.
+Search accepts one country supported by the installed JobSpy Country enum and
+Indeed adapter mapping, including Canada, USA, UK, Germany and India. JobSpy
+aliases such as United States and United Kingdom normalize to USA and UK.
+Specify both `--country Germany --location Berlin` for an international search;
+both providers receive `Berlin, Germany`, and Indeed receives Germany as its
+country flag. Omitting both keeps the earlier Toronto, ON, Canada default.
+Changing only country while retaining an explicitly conflicting location fails.
+
+Use public city/region names or the selected country for country-wide discovery.
+Locations allow Unicode letters, name punctuation and short abbreviations, up to
+120 characters and three comma-separated components of at most five words each.
+Digits, controls, URLs, contact/credential syntax and recognizable resume prose
+are rejected before requests. Earlier Canadian city/province normalization stays
+compatible. This is validation, not geocoding or a universal sensitive-text
+detector: supply only public place names. Check returned geography and employer
+eligibility independently; search country is not residence, work eligibility or
+application consent. JobSpy's raw provider diagnostics remain suppressed during
+adapter calls; internally swallowed failures can still resemble empty results.
 
 ## Facts, evidence and privacy
 

@@ -384,10 +384,10 @@ export async function discoveryJourney(page, output, base, receipt) {
     await search.getByRole('combobox', { name: label, exact: true }).click();
     await page.getByRole('option', { name: value, exact: true }).click();
   };
-  assert.equal(await search.getByLabel('Search location in Canada', { exact: true }).inputValue(), '');
+  assert.equal(await search.getByLabel('Public search location', { exact: true }).inputValue(), '');
   assert.equal(await search.getByRole('button', { name: 'Search approved terms', exact: true }).isDisabled(), true);
-  await choose('Search country', 'Canada only');
-  await search.getByLabel('Search location in Canada', { exact: true }).fill('Ottawa, ON');
+  await choose('Search country', 'Canada');
+  await search.getByLabel('Public search location', { exact: true }).fill('Ottawa, ON');
   await choose('Remote preference', 'Remote only');
   for (const [label, value] of [['Freshness in hours', '72'], ['Results per query', '2'], ['Total results per run', '4']]) await search.getByLabel(label, { exact: true }).fill(value);
   await choose('Shortlist order', 'Lexical coverage');
@@ -515,7 +515,7 @@ export async function delayedDiscoveryResponse(page, receipt, operation, switche
       if (switcher === 'switchDeskProfile') {
         await search.getByText('No discovered postings yet.', { exact: false }).waitFor();
         assert.equal(await search.getByText('Discovery Python Engineer', { exact: false }).count(), 0);
-        assert.equal(await search.getByLabel('Search location in Canada', { exact: true }).inputValue(), '');
+        assert.equal(await search.getByLabel('Public search location', { exact: true }).inputValue(), '');
       }
       await page.evaluate(({ switcher, original }) => window[switcher](original), { switcher, original });
     }
@@ -912,8 +912,8 @@ async function nativeLiveJourney(playwright, target, output, receipt, privateInp
       const watermark = prior.reduce((max, item) => item.audit.events.reduce((value, event) => Math.max(value, event.id), max), 0);
       receipt.search_before = { source_token: before.source_token, preferences: before.preferences, queries: before.queries, last_run: before.last_run, event_watermark: watermark };
       await writeFile(join(output, 'live-discovery-before.json'), JSON.stringify(before, null, 2));
-      for (const [label, value] of [['Search location in Canada', 'Toronto, ON, Canada'], ['Freshness in hours', '720'], ['Results per query', '5'], ['Total results per run', '5']]) assert.equal(await search.getByLabel(label, { exact: true }).inputValue(), value);
-      for (const [label, value] of [['Search country', 'Canada only'], ['Remote preference', 'Include all arrangements'], ['Shortlist order', 'Newest source posting first']]) assert.equal(await search.getByRole('combobox', { name: label, exact: true }).innerText(), value);
+      for (const [label, value] of [['Public search location', 'Toronto, ON, Canada'], ['Freshness in hours', '720'], ['Results per query', '5'], ['Total results per run', '5']]) assert.equal(await search.getByLabel(label, { exact: true }).inputValue(), value);
+      for (const [label, value] of [['Search country', 'Canada'], ['Remote preference', 'Include all arrangements'], ['Shortlist order', 'Newest source posting first']]) assert.equal(await search.getByRole('combobox', { name: label, exact: true }).innerText(), value);
       for (const evidence of before.proposals.find(proposal => proposal.term === 'Python').evidence) await search.getByText(`${evidence.fact_id}${evidence.role ? ` · ${evidence.role}` : ''}: ${evidence.excerpt}`, { exact: true }).first().waitFor();
       await page.screenshot({ path: join(output, 'live-confirmed-search.png'), fullPage: true });
       await checkpoint('confirmed_source_and_bounds');

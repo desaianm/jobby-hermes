@@ -140,11 +140,12 @@ export function SearchSetup({ data, busy, confirm, search, select }) {
   const [approved, setApproved] = useState(false);
   const update = key => value => { setPreferences(current => ({ ...current, [key]: value })); setApproved(false); };
   const payload = { ...preferences, remote: preferences.remote === 'true', hours_old: Number(preferences.hours_old), per_query: Number(preferences.per_query), total: Number(preferences.total) };
-  const valid = data.source_token && queries.length > 0 && queries.length <= 3 && preferences.country === 'Canada' && preferences.location.trim() && preferences.remote !== '' && preferences.order && [[payload.hours_old, 720], [payload.per_query, 10], [payload.total, 25]].every(([value, cap]) => Number.isInteger(value) && value >= 1 && value <= cap);
+  const countries = data.supported_countries || [];
+  const valid = data.source_token && queries.length > 0 && queries.length <= 3 && countries.includes(preferences.country) && preferences.location.trim() && preferences.remote !== '' && preferences.order && [[payload.hours_old, 720], [payload.per_query, 10], [payload.total, 25]].every(([value, cap]) => Number.isInteger(value) && value >= 1 && value <= cap);
   const unchanged = saved && Object.keys(payload).every(key => payload[key] === saved[key]) && JSON.stringify(queries) === JSON.stringify(data.queries);
   return h('section', { 'aria-label': 'Resume search and shortlist', style: { ...panel, ...stack } },
     h('h2', { style: { margin: 0, fontSize: 17 } }, '2. Find jobs from your resume'),
-    hint('Canada only · Indeed and LinkedIn via JobSpy. Queries contain only the approved public role or skill terms below. Resume text and employer history are not sent.'),
+    hint('Provider-supported international discovery · Indeed and LinkedIn via JobSpy. Queries contain only the approved public role or skill terms below. Resume text and employer history are not sent.'),
     hint('Search setup does not confirm work authorization, employer eligibility or application consent. Eventual auto-apply within approved rules is NOT ACTIVE.'),
     ...(data.warnings || []).map((warning, i) => h('p', { key: i, role: 'status' }, warning)),
     h('form', { style: stack, onSubmit: e => { e.preventDefault(); if (valid && approved) confirm({ source_token: data.source_token, queries, preferences: payload }); } },
@@ -152,9 +153,9 @@ export function SearchSetup({ data, busy, confirm, search, select }) {
       ...data.proposals.map(proposal => h('div', { key: proposal.term, style: stack },
         h('label', { style: row }, h(Checkbox, { checked: queries.includes(proposal.term), disabled: busy || (!queries.includes(proposal.term) && queries.length >= 3), onCheckedChange: checked => { setQueries(current => checked === true ? [...current, proposal.term] : current.filter(term => term !== proposal.term)); setApproved(false); } }), proposal.term),
         ...proposal.evidence.map((evidence, i) => hint(`${evidence.fact_id}${evidence.role ? ` · ${evidence.role}` : ''}: ${evidence.excerpt}`)))),
-      choice('Search country', preferences.country, update('country'), [['Canada', 'Canada only']], busy),
-      field('Search location in Canada', preferences.location, update('location'), { maxLength: 120, disabled: busy, placeholder: 'Ottawa, ON, Canada' }),
-      hint('Use a city/province pair from the documented supported set, a province/territory name or code followed by Canada, or Canada for country-wide search. City searches add Canada explicitly. Other locations are unsupported; returned posting geography still needs verification.'),
+      choice('Search country', preferences.country, update('country'), countries.map(country => [country, country]), busy),
+      field('Public search location', preferences.location, update('location'), { maxLength: 120, disabled: busy, placeholder: 'City, region or selected country' }),
+      hint('Use public place names only: a city/region name, or the selected country for country-wide search. Names may use Unicode letters; recognizable contact, credential and resume patterns and invalid characters are rejected. Arbitrary sensitive prose may not be detected. The selected country is added explicitly. This validates input, not geocoding; verify returned listings.'),
       choice('Remote preference', preferences.remote, update('remote'), [['true', 'Remote only'], ['false', 'Include all arrangements']], busy),
       ...[['hours_old', 'Freshness in hours', 720], ['per_query', 'Results per query', 10], ['total', 'Total results per run', 25]].map(([key, label, max]) => h('div', { key }, field(label, preferences[key], update(key), { type: 'number', min: 1, max, step: 1, disabled: busy }))),
       choice('Shortlist order', preferences.order, update('order'), [['lexical', 'Lexical coverage'], ['newest', 'Newest source posting first'], ['oldest', 'Oldest source posting first']], busy),

@@ -37,14 +37,21 @@ automation or daily lease, and does not qualify the later browser/receipt journe
    must remain available for integrity checks; phone is never imported.
    For resume-driven discovery, call `jobby_discover(operation: inspect)`.
    Present its source-backed proposals/excerpts and obtain explicit search inputs:
-   Canada country, Canadian location, remote-only or all arrangements, freshness
+   A country from `supported_countries`, a bounded public city/region location for
+   that country, remote-only or all arrangements, freshness
    (1–720 hours), per-query volume (1–10), total volume (1–25) and order
-   (`lexical|newest|oldest`). The current adapter supports Canada only; unsupported
-   countries are rejected. Resume text is evidence, never location/legal consent.
+   (`lexical|newest|oldest`). Country options follow the installed JobSpy enum and
+   Indeed adapter mapping, including Canada, USA, UK, Germany and India. Unsupported
+   countries are rejected before requests. Both providers receive a country-qualified
+   location; Indeed also receives the selected country flag. Use public place names
+   only: Unicode names are supported, but digits, controls, URLs, contact/credential
+   syntax and recognizable resume prose are rejected. This validates inputs, not
+   geography. Verify returned listings independently. A search country establishes
+   neither residence, work eligibility nor application consent.
    Confirm with `operation: confirm`, the returned `source_token`, one to three
    selected proposal strings in `queries`, and the complete `preferences` object.
    Reuse this confirmation with `operation: search` and no other fields. Source
-   replacement or changed bytes require confirmation again. Unsupported query
+   replacement, changed bytes or edited country/location/preferences require confirmation again. Unsupported query
    vocabulary stays weak; use a selected posting when proposals are empty.
    Search sends bounded approved public terms and the explicit location, never
    resume sentences, name, email, phone or employer history. Treat imported and

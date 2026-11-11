@@ -403,7 +403,7 @@
   },
   "discover": {
     "name": "jobby_discover",
-    "description": "Inspect resume-grounded query suggestions, confirm explicit Canada-only provider preferences, or run bounded discovery. Search uses only confirmed terms. No application or eligibility authority.",
+    "description": "Inspect resume-grounded query suggestions and provider-supported countries, confirm explicit country/location preferences, or run bounded international discovery. Search uses only confirmed terms. No application or eligibility authority.",
     "parameters": {
       "$defs": {
         "SearchPreferences": {
@@ -411,7 +411,9 @@
           "description": "Provider options, separate from eligibility and submission settings.",
           "properties": {
             "country": {
-              "const": "Canada",
+              "description": "Provider-supported country; inspect supported_countries for canonical choices. JobSpy aliases are accepted.",
+              "maxLength": 80,
+              "minLength": 1,
               "title": "Country",
               "type": "string"
             },

@@ -46,6 +46,23 @@ def evidence(tmp_path, value):
     return path
 
 
+def test_cli_propagates_selected_country_location_and_preserves_default(workspace, monkeypatch, capsys):
+    import jobspy
+    import pandas as pd
+    calls = []
+    monkeypatch.setattr(jobspy, 'scrape_jobs', lambda **kw: calls.append(kw) or pd.DataFrame())
+    result = run(monkeypatch, capsys, 'search', 'Python', '--country', 'United States', '--location', 'New York, NY', '--remote')
+    assert result['jobs'] == []
+    assert calls[-1]['country_indeed'] == 'USA' and calls[-1]['location'] == 'New York, NY, USA'
+    assert calls[-1]['is_remote'] is True
+    run(monkeypatch, capsys, 'search', 'Python')
+    assert calls[-1]['country_indeed'] == 'Canada' and calls[-1]['location'] == 'Toronto, ON, Canada'
+    before = len(calls)
+    run(monkeypatch, capsys, 'search', 'Python', '--country', 'Atlantis', '--location', 'Example', fails=True)
+    run(monkeypatch, capsys, 'search', 'Python', '--country', 'India', '--location', 'fixture@example.test', fails=True)
+    assert len(calls) == before
+
+
 def test_profile_private_phone_omitted(workspace, monkeypatch, capsys):
     workspace.save_phone('+1 416 555 0199')
     workspace.save_answers({'work_eligibility': 'Canada'})
